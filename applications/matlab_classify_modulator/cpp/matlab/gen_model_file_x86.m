@@ -12,7 +12,10 @@ modulationTypes = categorical(sort(["BPSK", "QPSK", "8PSK", ...
 for mode = 1:length(modulationTypes)
     data = load(['mod_',char(modulationTypes(mode)),'.mat']);
 
-    [prob, result] = classifyModulation(data.rx);
+    data1.rx = single(data.rx)
+
+
+    [prob, result] = classifyModulation(data1.rx);
 
     disp(prob);
     disp(result);
@@ -23,15 +26,6 @@ end
 
 %% Gen Code mex
 cfg = coder.gpuConfig('mex');
-cfg.GpuConfig.CompilerFlags = '--fmad=false';
-cfg.GenerateReport = true;
-% cfg.DeepLearningConfig = coder.DeepLearningConfig('cudnn');
-cfg.DeepLearningConfig = coder.DeepLearningConfig('none');
-% cfg.DeepLearningConfig.AutoTuning = true;
-codegen -config cfg classifyModulation
-
-%% Gen Code lib
-cfg = coder.gpuConfig('lib');
 cfg.GpuConfig.CompilerFlags = '--fmad=false';
 cfg.GenerateReport = true;
 % cfg.DeepLearningConfig = coder.DeepLearningConfig('cudnn');
@@ -50,11 +44,12 @@ codegen -config cfg classifyModulation
 
 
 %% Test
-for k  = 1:10
+for k  = 1
 for mode = 1:length(modulationTypes)
     data = load(['mod_',char(modulationTypes(mode)),'.mat']);
+    data1.rx = single(data.rx)
 
-    [prob, result] = classifyModulation_mex(data.rx);
+    [prob, result] = classifyModulation_mex(data1.rx);
 
     disp(prob);
     disp(result);
@@ -63,3 +58,13 @@ for mode = 1:length(modulationTypes)
 
 end
 end
+
+% disp('REAL DATA');
+% data = load(['osc_capt.mat']);
+% data1 = complex(single(data.axi_adrv9009_rx_hpc_voltage0_i), single(data.axi_adrv9009_rx_hpc_voltage0_q));
+% 
+% [prob, result] = classifyModulation_mex(data1);
+% 
+% disp(prob);
+% disp(result);
+% disp('------');
