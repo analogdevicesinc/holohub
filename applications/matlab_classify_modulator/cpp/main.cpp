@@ -41,17 +41,24 @@ class MatlabClassifyModulationOp : public Operator {
 
   void compute(InputContext& op_input, OutputContext& op_output,
                ExecutionContext& context) override {
-    static creal_T inputSig[1024] = {0};
-    static float v;
-    static double modulation;
+    float v;
+    double modulation;
 
+    // Get input message
+    auto in = op_input.receive<std::shared_ptr<NetworkOpBurstParams>>("burst_in").value();
+    creal32_T* val = reinterpret_cast<creal32_T*>(in->data);
 
     // Call MATLAB CUDA function to do image processing
-    classifyModulation(inputSig, &v, &modulation);
+    classifyModulation(val, &v, &modulation);
 
     // Create output message
-    auto result = modulation;
-    op_output.emit(result);
+    HOLOSCAN_LOG_INFO("Confidence: {}", v);
+    HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
+
+    delete[] in->data;
+
+    //auto result = modulation;
+    //op_output.emit(result);
   }
 
  private:
@@ -64,16 +71,8 @@ class MatlabClassifyModulationApp : public holoscan::Application {
   void compose() override {
     using namespace holoscan;
 
-    const std::shared_ptr<CudaStreamPool> cuda_stream_pool =
-        make_resource<CudaStreamPool>("cuda_stream", 0, 0, 0, 1, 5);
-
     // Define operators and configure using yaml configuration
-    auto matlab = make_operator<ops::MatlabClassifyModulationOp>(
-        "matlab",
-        from_config("matlab"),
-        Arg("allocator") = make_resource<BlockMemoryPool>(
-            "pool", 1, 854 * 480 * 3 * 4, 4), /* width * height * channels * bpp */
-        Arg("cuda_stream_pool") = cuda_stream_pool);
+    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(10));
 
     auto net_rx = make_operator<ops::BasicNetworkOpRx>(
         "network_rx", from_config("network_rx"), make_condition<BooleanCondition>("is_alive"));
@@ -86,7 +85,7 @@ class MatlabClassifyModulationApp : public holoscan::Application {
 int main(int argc, char** argv) {
   // Get the yaml configuration file
   auto config_path = std::filesystem::canonical(argv[0]).parent_path();
-  config_path /= std::filesystem::path("matlab_classify_modulator");
+  config_path /= std::filesystem::path("matlab_classify_modulator.yaml");
   if (argc >= 2) { config_path = argv[1]; }
 
   auto app = holoscan::make_application<MatlabClassifyModulationApp>();

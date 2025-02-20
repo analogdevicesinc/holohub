@@ -15,14 +15,10 @@
 # limitations under the License.
 ---
 matlab:
-  out_width: 854
-  out_height: 480
-  out_channels: 3
-  sigma: 4
 
 network_rx:
   batch_size: 1
-  max_payload_size: 1400
+  max_payload_size: 8192
   dst_port: 4096
   l4_proto: "udp"
-  ip_addr: "127.0.0.1"
+  ip_addr: "10.43.1.5"
