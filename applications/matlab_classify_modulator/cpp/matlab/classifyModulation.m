@@ -1,6 +1,6 @@
 function [v, modulation] = classifyModulation(inputSig) %#codegen
 
-assert(isa(inputSig,'double') && ~isreal(inputSig) && all(size(inputSig) == [1024,1]));
+assert(isa(inputSig,'single') && ~isreal(inputSig) && all(size(inputSig) == [1024,1]));
 
 coder.gpu.kernelfun();
 % input signal size is 1024-by-2
@@ -18,9 +18,13 @@ if isempty(model)
     model = coder.loadDeepLearningNetwork(ModelFile, 'mynet');
 end
 
-inputSigS = single(inputSig);
-inputSigI = real(inputSigS);
-inputSigQ = imag(inputSigS);
+%Changes CJ
+framePower = mean(abs(inputSig).^2);
+inputSig = inputSig / sqrt(framePower);
+%End Changes
+
+inputSigI = real(inputSig);
+inputSigQ = imag(inputSig);
 inputSigIQ = [inputSigI, inputSigQ];
 
 % Predict the Signal Modulation
