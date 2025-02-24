@@ -72,10 +72,10 @@ class MatlabClassifyModulationApp : public holoscan::Application {
     using namespace holoscan;
 
     // Define operators and configure using yaml configuration
-    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(10));
+    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(-1));
 
     auto net_rx = make_operator<ops::BasicNetworkOpRx>(
-        "network_rx", from_config("network_rx"), make_condition<BooleanCondition>("is_alive"));
+        "network_rx", from_config("network_rx"), make_condition<BooleanCondition>("is_alive", true));
 
     // Define the workflow
     add_flow(net_rx, matlab, {{"burst_out", "burst_in"}});
