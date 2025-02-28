@@ -1,6 +1,7 @@
-function [v, modulation] = classifyModulation(inputSig) %#codegen
-
-assert(isa(inputSig,'single') && ~isreal(inputSig) && all(size(inputSig) == [1024,1]));
+function [v, modulation] = classifyModulation(inputSig, chan) %#codegen
+assert(isa(inputSig,'single') && ~isreal(inputSig) && all(size(inputSig) == [4096,1]));
+assert(isa(chan, 'uint8') && isreal(chan) && all(size(chan) == [1,1]), ...
+    'Channel number must be an integer between 1 and 4.');
 
 coder.gpu.kernelfun();
 % input signal size is 1024-by-2
@@ -19,12 +20,18 @@ if isempty(model)
 end
 
 %Changes CJ
-framePower = mean(abs(inputSig).^2);
-inputSig = inputSig / sqrt(framePower);
+selectedChannel = complex(zeros(1024, 1, 'single')); % Preallocate for fixed size
+index = 1;
+for i = double(chan):double(4):double(4096)
+    selectedChannel(index) = inputSig(i);
+    index = index + 1;
+end
+framePower = mean(abs(selectedChannel).^2);
+selectedChannel = selectedChannel / sqrt(framePower);
 %End Changes
 
-inputSigI = real(inputSig);
-inputSigQ = imag(inputSig);
+inputSigI = real(selectedChannel);
+inputSigQ = imag(selectedChannel);
 inputSigIQ = [inputSigI, inputSigQ];
 
 % Predict the Signal Modulation
