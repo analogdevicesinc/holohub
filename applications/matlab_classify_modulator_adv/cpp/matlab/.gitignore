@@ -1,1 +1,4 @@
 codegen/
+*.mexa64
+*.mexw64
+
