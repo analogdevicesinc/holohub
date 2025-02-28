@@ -73,6 +73,8 @@ add_holohub_application(matlab_classify_modulator DEPENDS
                         OPERATORS basic_network)
 
 add_subdirectory(nvidia_video_codec)
+add_holohub_application(matlab_classify_modulator_adv DEPENDS
+                        OPERATORS advanced_network)
 
 add_holohub_application(simple_radar_pipeline)
 add_holohub_application(simple_pdw_pipeline DEPENDS

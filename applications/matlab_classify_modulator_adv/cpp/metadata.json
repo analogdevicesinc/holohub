@@ -1,0 +1,40 @@
+{
+	"application": {
+		"name": "matlab_classify_modulator",
+		"authors": [
+			{
+				"name": "ADI SDP",
+				"affiliation": "ADI"
+			}
+		],
+		"language": "C++",
+		"version": "1.0.0",
+		"changelog": {
+			"1.0": "Initial Release"
+		},
+		"holoscan_sdk": {
+			"minimum_required_version": "1.0.3",
+			"tested_versions": [
+				"1.0.3"
+			]
+		},
+		"platforms": [
+			"amd64",
+			"arm64"
+		],
+		"tags": [
+			"MATLAB",
+			"Signal Processing",
+			"CUDA"
+		],
+		"ranking": 4,
+		"dependencies": {
+			"operators": [
+				{
+					"name": "MATLAB",
+					"version": "R2024b"
+				}
+			]
+		}
+	}
+}
