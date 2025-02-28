@@ -1,6 +1,6 @@
 % Specify IP, username and p/w of device
 clear hwobj
-hwobj = jetson('10.48.65.174','analog','analog');
+hwobj = jetson('10.48.65.198','analog','analog');
 
 %% Generate model for classification function
 matfile = 'mod_classify_model.mat';
@@ -15,11 +15,29 @@ modulationTypes = categorical(sort(["BPSK", "QPSK", "8PSK", ...
 
 for mode = 1:length(modulationTypes)
     data = load(['mod_',char(modulationTypes(mode)),'.mat']);
-    data1.rx = single(data.rx)
 
+    data.rx = repelem(data.rx, 4);
+    data1.rx = single(data.rx);
 
-    [prob, result] = classifyModulation(data1.rx);
+    [prob, result] = classifyModulation(data1.rx, uint8(1));
+    disp(prob);
+    disp(result);
+    disp(modulationTypes(mode));
+    disp('------');
 
+    [prob, result] = classifyModulation(data1.rx, uint8(2));
+    disp(prob);
+    disp(result);
+    disp(modulationTypes(mode));
+    disp('------');
+
+    [prob, result] = classifyModulation(data1.rx, uint8(3));
+    disp(prob);
+    disp(result);
+    disp(modulationTypes(mode));
+    disp('------');
+
+    [prob, result] = classifyModulation(data1.rx, uint8(4));
     disp(prob);
     disp(result);
     disp(modulationTypes(mode));

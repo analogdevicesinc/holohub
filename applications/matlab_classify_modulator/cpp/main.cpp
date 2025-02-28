@@ -48,12 +48,14 @@ class MatlabClassifyModulationOp : public Operator {
     auto in = op_input.receive<std::shared_ptr<NetworkOpBurstParams>>("burst_in").value();
     creal32_T* val = reinterpret_cast<creal32_T*>(in->data);
 
-    // Call MATLAB CUDA function to do image processing
-    classifyModulation(val, &v, &modulation);
+    // Call MATLAB CUDA function to do modulation classification
+    for (int i=1; i<5; i++) {
+	classifyModulation(val, i, &v, &modulation);
 
-    // Create output message
-    HOLOSCAN_LOG_INFO("Confidence: {}", v);
-    HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
+	// Create output message
+	HOLOSCAN_LOG_INFO("Confidence {}: {}", i, v);
+	HOLOSCAN_LOG_INFO("Modulation {}: {}", i, modulation);
+    }
 
     delete[] in->data;
 
@@ -72,7 +74,7 @@ class MatlabClassifyModulationApp : public holoscan::Application {
     using namespace holoscan;
 
     // Define operators and configure using yaml configuration
-    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(-1));
+    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(10));
 
     auto net_rx = make_operator<ops::BasicNetworkOpRx>(
         "network_rx", from_config("network_rx"), make_condition<BooleanCondition>("is_alive", true));
