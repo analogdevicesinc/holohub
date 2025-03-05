@@ -30,8 +30,8 @@ advanced_network:
     version: 1
     manager: "dpdk"
     master_core: 3
-    debug: true
-    log_level: "debug"
+    debug: false
+    log_level: "warn"
 
     memory_regions:
     - name: "Data_RX_GPU"
@@ -39,8 +39,8 @@ advanced_network:
       affinity: 0
       access:
         - local
-      num_bufs: 49152   # 3 x batch_size
-      buf_size: 2100
+      num_bufs: 8192   # 3 x batch_size
+      buf_size: 9000
 
     interfaces:
     - name: data2
@@ -51,7 +51,7 @@ advanced_network:
           - name: "Data"
             id: 0
             cpu_core: 8
-            batch_size: 16384
+            batch_size: 100
             output_port: "adv_rx_out"
             memory_regions:
               - "Data_RX_GPU"
@@ -68,6 +68,6 @@ advanced_network:
 bench_rx:
   gpu_direct: true         # Set to true if using a GPU region for the Rx queues.
   split_boundary: false     # Byte boundary where header and data is split, 0 if no split
-  batch_size: 16384
-  max_packet_size: 8192
+  batch_size: 100
+  max_packet_size: 9000
   header_size: 0
