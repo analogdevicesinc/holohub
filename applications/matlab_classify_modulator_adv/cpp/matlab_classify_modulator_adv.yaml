@@ -30,41 +30,34 @@ advanced_network:
     version: 1
     manager: "dpdk"
     master_core: 3
-    debug: false
-    log_level: "warn"
+    debug: true
+    log_level: "debug"
 
     memory_regions:
-    - name: "Data_RX_CPU"
-      kind: "huge"
-      affinity: 0
-      access:
-        - local
-      num_bufs: 30720
-      buf_size: 64
     - name: "Data_RX_GPU"
       kind: "device"
       affinity: 0
       access:
         - local
-      num_bufs: 30720
-      buf_size: 1064
+      num_bufs: 49152   # 3 x batch_size
+      buf_size: 2100
 
     interfaces:
     - name: data2
-      address: 0005:03:00.0
+      address: 0000:a2:00.0
       flow_isolation: true
       rx:
         - queues:
           - name: "Data"
             id: 0
             cpu_core: 8
-            batch_size: 10240
+            batch_size: 16384
             output_port: "adv_rx_out"
             memory_regions:
-              - "Data_RX_CPU"
               - "Data_RX_GPU"
           flows:
             - name: "Complex IQ Samples"
+              id: 0
               action:
                 type: queue
                 id: 0
@@ -73,8 +66,8 @@ advanced_network:
                 udp_dst: 4096
 
 bench_rx:
-  gpu_direct: true        # Set to true if using a GPU region for the Rx queues.
-  split_boundary: true    # Whether header and data is split (Header to CPU)
-  batch_size: 10240
-  max_packet_size: 1064
-  header_size: 64
+  gpu_direct: true         # Set to true if using a GPU region for the Rx queues.
+  split_boundary: false     # Byte boundary where header and data is split, 0 if no split
+  batch_size: 16384
+  max_packet_size: 8192
+  header_size: 0
