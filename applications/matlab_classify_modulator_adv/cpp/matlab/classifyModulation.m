@@ -1,5 +1,6 @@
 function [v, modulation] = classifyModulation(inputSig, chan) %#codegen
-assert(isa(inputSig,'single') && ~isreal(inputSig) && all(size(inputSig) == [4096,1]));
+assert(isa(inputSig, 'int16') && all(size(inputSig) == [8192, 1]));
+
 assert(isa(chan, 'uint8') && isreal(chan) && all(size(chan) == [1,1]), ...
     'Channel number must be an integer between 1 and 4.');
 
@@ -20,18 +21,22 @@ if isempty(model)
 end
 
 %Changes CJ
+selectedChannel_i = complex(zeros(1024, 1, 'single')); % Preallocate for fixed size
 selectedChannel = complex(zeros(1024, 1, 'single')); % Preallocate for fixed size
 index = 1;
-for i = double(chan):double(4):double(4096)
-    selectedChannel(index) = inputSig(i);
+for i = double(2*chan-1):double(8):double(8192)
+    % selectedChannel(index) =  single(inputSig(i))/32766.0 + 1i * single(inputSig(i+1))/32766.0;
+    selectedChannel(index) =  single(inputSig(i))+ 1i * single(inputSig(i+1));
     index = index + 1;
 end
+
 framePower = mean(abs(selectedChannel).^2);
-selectedChannel = selectedChannel / sqrt(framePower);
+selectedChannel_i = selectedChannel / sqrt(framePower);
+
 %End Changes
 
-inputSigI = real(selectedChannel);
-inputSigQ = imag(selectedChannel);
+inputSigI = real(selectedChannel_i);
+inputSigQ = imag(selectedChannel_i);
 inputSigIQ = [inputSigI, inputSigQ];
 
 % Predict the Signal Modulation
