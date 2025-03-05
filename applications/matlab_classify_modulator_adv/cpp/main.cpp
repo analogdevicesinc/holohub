@@ -48,7 +48,7 @@ class MatlabClassifyModulationOp : public Operator {
     creal32_T val[1024] = {};
 
     // Call MATLAB CUDA function to do modulation classification
-    classifyModulation(val, &v, &modulation);
+    classifyModulation(val, 1, &v, &modulation);
 
     // Create output message
     HOLOSCAN_LOG_INFO("Confidence: {}", v);
