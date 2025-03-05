@@ -51,8 +51,8 @@ class MatlabClassifyModulationOp : public Operator {
     classifyModulation(val, 1, &v, &modulation);
 
     // Create output message
-    HOLOSCAN_LOG_INFO("Confidence: {}", v);
-    HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
+    //HOLOSCAN_LOG_INFO("Confidence: {}", v);
+    //HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
 
     //auto result = modulation;
     //op_output.emit(result);
@@ -73,11 +73,15 @@ class MatlabClassifyModulationApp : public holoscan::Application {
       make_operator<ops::AdvNetworkOpRx>("adv_network_rx", output_rx_ports, from_config("advanced_network"),
                                           make_condition<BooleanCondition>("is_alive", true));
 
+    auto bench_rx =
+      make_operator<ops::AdvNetworkingDefaultRxOp>("bench_rx", from_config("bench_rx"));
+
     // Define operators and configure using yaml configuration
     auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(-1));
 
     // Define the workflow
-    add_flow(adv_net_rx, matlab, {{"adv_rx_out", "burst_in"}});
+    add_flow(adv_net_rx, bench_rx, {{ "adv_rx_out", "burst_in" }});
+    add_flow(bench_rx, matlab, {{"burst_out", "burst_in"}});
   }
 };
 
