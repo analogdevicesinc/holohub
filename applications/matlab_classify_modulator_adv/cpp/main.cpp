@@ -19,7 +19,6 @@
 #include "adv_network_kernels.h"
 #include <holoscan/holoscan.hpp>
 
-#include "classifyModulation.h"
 #include "classifyModulation_terminate.h"
 
 namespace holoscan::ops {
@@ -42,20 +41,8 @@ class MatlabClassifyModulationOp : public Operator {
 
   void compute(InputContext& op_input, OutputContext& op_output,
                ExecutionContext& context) override {
-    float v;
-    double modulation;
-
-    creal32_T val[1024] = {};
-
-    // Call MATLAB CUDA function to do modulation classification
-    classifyModulation(val, 1, &v, &modulation);
-
-    // Create output message
-    //HOLOSCAN_LOG_INFO("Confidence: {}", v);
-    //HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
-
-    //auto result = modulation;
-    //op_output.emit(result);
+    //Do nothing
+    //Processing moved to default_op_rx.h
   }
 
  private:
