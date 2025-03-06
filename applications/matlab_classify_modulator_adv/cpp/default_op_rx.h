@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <sys/time.h>
 
+#include "classifyModulation.h"
+
 #define BURST_ACCESS_METHOD_RAW_PTR 0
 #define BURST_ACCESS_METHOD_DIRECT_ACCESS 1
 
@@ -248,12 +250,10 @@ class AdvNetworkingDefaultRxOp : public Operator {
         auto pkt_len = adv_net_get_seg_pkt_len(burst, 0, p);
 #endif
         auto payload_len = pkt_len - header_size_.get();
-
         // Copy payload to aggregated CPU buffers now
         memcpy((char*)full_batch_data_h_[cur_batch_idx_] + burst_offset + p * nom_payload_size_,
                payload_ptr,
                payload_len);
-
         // Count bytes received
         ttl_bytes_recv_ += pkt_len;
 
@@ -310,14 +310,16 @@ class AdvNetworkingDefaultRxOp : public Operator {
                               streams_[cur_batch_idx_]);
 
       } else {
-        // Non GPUDirect mode: we copy the payload on host-pinned memory (in full_batch_data_h_)
-        // to a contiguous memory buffer on the GPU (full_batch_data_d_)
-        // NOTE: there is no reordering support here at all
-        cudaMemcpyAsync(full_batch_data_d_[cur_batch_idx_],
-                        full_batch_data_h_[cur_batch_idx_],
-                        batch_size_.get() * nom_payload_size_,
-                        cudaMemcpyDefault,
-                        streams_[cur_batch_idx_]);
+        // Non GPUDirect mode
+
+      static const int16_t* val = reinterpret_cast<int16_t*>(full_batch_data_h_[cur_batch_idx_]);
+      float v;
+      double modulation;
+      for (int i = 1; i < 5; i++) {
+        classifyModulation(val, i, &v, &modulation);
+        HOLOSCAN_LOG_INFO("Confidence: {}", v);
+        HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
+      }
       }
 
       if (cudaGetLastError() != cudaSuccess) {
@@ -346,6 +348,10 @@ class AdvNetworkingDefaultRxOp : public Operator {
       // Update structs for the next batch
       cur_batch_.num_bursts = 0;
       cur_batch_idx_ = (++cur_batch_idx_ % num_concurrent);
+
+      //NEW CODE
+      adv_net_free_all_pkts_and_burst(burst);
+      //END_NEW_CODE
 
       // NOTE: output for the next operator would be full_batch_data_d_,
       // once the CUDA event is completed
