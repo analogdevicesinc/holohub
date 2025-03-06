@@ -28,39 +28,55 @@ class MatlabClassifyModulationOp : public Operator {
 
   MatlabClassifyModulationOp() = default;
 
+  Parameter<std::string> out_file_;
+  std::ofstream outfile_;
+
   void setup(OperatorSpec& spec) override {
     spec.input<std::shared_ptr<NetworkOpBurstParams>>("burst_in");
+    spec.param<std::string>(
+      out_file_, "out_file", "Out File Name", "modulation_results.txt");
   }
 
   void start() {
+    outfile_.open(out_file_.get(), std::ios_base::out);
   }
 
   void stop() {
     classifyModulation_terminate();
+    outfile_.close();
   }
 
   void compute(InputContext& op_input, OutputContext& op_output,
                ExecutionContext& context) override {
-    float v;
-    double modulation;
+    std::vector<float> v(5);
+    std::vector<double> modulation(5);
 
     // Get input message
     auto in = op_input.receive<std::shared_ptr<NetworkOpBurstParams>>("burst_in").value();
-    creal32_T* val = reinterpret_cast<creal32_T*>(in->data);
+    int16_t* val = reinterpret_cast<int16_t*>(in->data);
 
     // Call MATLAB CUDA function to do modulation classification
-    for (int i=1; i<5; i++) {
-	classifyModulation(val, i, &v, &modulation);
+    for (int i = 1; i < 5; i++) { classifyModulation(val, i, &v[i], &modulation[i]); }
 
-	// Create output message
-	HOLOSCAN_LOG_INFO("Confidence {}: {}", i, v);
-	HOLOSCAN_LOG_INFO("Modulation {}: {}", i, modulation);
-    }
+    // Create output message
+    HOLOSCAN_LOG_DEBUG("Confidence {}", v);
+    // Log modulation information
+    HOLOSCAN_LOG_DEBUG("Modulation {}", modulation);
+
+    // Move file pointer to the beginning
+    outfile_.seekp(0, std::ios::beg);
+
+    // Save i, v, and modulation to a txt file
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
+    outfile_ << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << std::endl;
+    for (int i = 1; i < 5; i++) { outfile_ << modulation[i] << std::endl; }
+    for (int i = 1; i < 5; i++) { outfile_ << v[i] << std::endl; }
 
     delete[] in->data;
 
-    //auto result = modulation;
-    //op_output.emit(result);
+    outfile_.flush();
   }
 
  private:
@@ -74,10 +90,13 @@ class MatlabClassifyModulationApp : public holoscan::Application {
     using namespace holoscan;
 
     // Define operators and configure using yaml configuration
-    auto matlab = make_operator<ops::MatlabClassifyModulationOp>("matlab", make_condition<CountCondition>(10));
+    auto matlab = make_operator<ops::MatlabClassifyModulationOp>(
+        "matlab", from_config("matlab"), make_condition<CountCondition>(-1));
 
-    auto net_rx = make_operator<ops::BasicNetworkOpRx>(
-        "network_rx", from_config("network_rx"), make_condition<BooleanCondition>("is_alive", true));
+    auto net_rx =
+        make_operator<ops::BasicNetworkOpRx>("network_rx",
+                                             from_config("network_rx"),
+                                             make_condition<BooleanCondition>("is_alive", true));
 
     // Define the workflow
     add_flow(net_rx, matlab, {{"burst_out", "burst_in"}});
