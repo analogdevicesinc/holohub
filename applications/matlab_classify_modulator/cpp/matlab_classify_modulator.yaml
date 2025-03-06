@@ -15,6 +15,7 @@
 # limitations under the License.
 ---
 matlab:
+  out_file: "modulation_results.txt"
 
 network_rx:
   batch_size: 4
