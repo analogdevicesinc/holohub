@@ -20,6 +20,6 @@ matlab:
 network_rx:
   batch_size: 4
   max_payload_size: 8192
-  dst_port: 4096
+  dst_port: 5000
   l4_proto: "udp"
-  ip_addr: "127.0.0.1"
+  ip_addr: "10.43.0.5"
