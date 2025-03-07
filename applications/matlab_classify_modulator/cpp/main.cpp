@@ -59,9 +59,9 @@ class MatlabClassifyModulationOp : public Operator {
     for (int i = 1; i < 5; i++) { classifyModulation(val, i, &v[i], &modulation[i]); }
 
     // Create output message
-    HOLOSCAN_LOG_DEBUG("Confidence {}", v);
+    HOLOSCAN_LOG_INFO("Confidence {}", v);
     // Log modulation information
-    HOLOSCAN_LOG_DEBUG("Modulation {}", modulation);
+    HOLOSCAN_LOG_INFO("Modulation {}", modulation);
 
     // Move file pointer to the beginning
     outfile_.seekp(0, std::ios::beg);
