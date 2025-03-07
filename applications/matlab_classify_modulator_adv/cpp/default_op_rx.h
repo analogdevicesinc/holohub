@@ -313,13 +313,16 @@ class AdvNetworkingDefaultRxOp : public Operator {
         // Non GPUDirect mode
 
       static const int16_t* val = reinterpret_cast<int16_t*>(full_batch_data_h_[cur_batch_idx_]);
-      float v;
-      double modulation;
-      for (int i = 1; i < 5; i++) {
-        classifyModulation(val, i, &v, &modulation);
-        HOLOSCAN_LOG_INFO("Confidence: {}", v);
-        HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
-      }
+      std::vector<float> v(4);
+      std::vector<double> modulation(4);
+
+      // Call MATLAB CUDA function to do modulation classification
+      for (int i = 0; i < 4; i++) { classifyModulation(val, i+1, &v[i], &modulation[i]); }
+      // Create output message
+      HOLOSCAN_LOG_DEBUG("Confidence {}", v);
+      // Log modulation information
+      HOLOSCAN_LOG_DEBUG("Modulation {}", modulation);
+
       }
 
       if (cudaGetLastError() != cudaSuccess) {
