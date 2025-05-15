@@ -35,6 +35,10 @@
 					"version": "R2024b"
 				}
 			]
+		},
+		"run": {
+			"command": "<holohub_app_bin>/matlab_classify_modulator matlab_classify_modulator.yaml",
+			"workdir": "holohub_bin"
 		}
 	}
 }
