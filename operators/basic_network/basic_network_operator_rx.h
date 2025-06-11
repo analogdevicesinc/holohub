@@ -47,7 +47,7 @@ class BasicNetworkOpRx : public Operator {
   L4Proto l4_proto_;
   struct sockaddr_in server_addr_;
   uint32_t byte_cnt_ = 0;
-  uint8_t* pkt_buf = nullptr;
+  std::unique_ptr<uint8_t[]> pkt_buf = nullptr;
   uint32_t pkts_in_batch_ = 0;
   bool connected_ = false;
 };

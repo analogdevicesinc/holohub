@@ -27,4 +27,8 @@ struct NetworkOpBurstParams {
   uint8_t *data;
   uint32_t len;
   uint32_t num_pkts;
+
+  ~NetworkOpBurstParams() {
+    delete[] data;
+  }
 };
