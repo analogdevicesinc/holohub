@@ -45,7 +45,7 @@ void BasicNetworkOpRx::initialize() {
 
   if (inet_pton(AF_INET, ip_addr_.get().c_str(), &(server_addr_.sin_addr.s_addr)) != 1) {
     HOLOSCAN_LOG_CRITICAL("Failed to convert IP address to numeric format!");
-    throw;
+    throw std::runtime_error("Failed to convert IP address");
   }
 
   server_addr_.sin_family = AF_INET;
@@ -56,20 +56,20 @@ void BasicNetworkOpRx::initialize() {
 
     if ((sockfd_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
       HOLOSCAN_LOG_CRITICAL("Failed to create UDP socket");
-      throw;
+      throw std::runtime_error("Failed to create UDP socket");
     }
   } else {
     l4_proto_ = L4Proto::TCP;
 
     if ((sockfd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
       HOLOSCAN_LOG_CRITICAL("Failed to create TCP socket");
-      throw;
+      throw std::runtime_error("Failed to create TCP socket");
     }
 
     int opt = 1;
-    if (setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
       HOLOSCAN_LOG_CRITICAL("Failed to set socket options");
-      throw;
+      throw std::runtime_error("Failed to set socket options");
     }
   }
 
@@ -77,12 +77,13 @@ void BasicNetworkOpRx::initialize() {
   if (bind(sockfd_, reinterpret_cast<const struct sockaddr*>(&server_addr_),
       sizeof(server_addr_)) < 0) {
     HOLOSCAN_LOG_CRITICAL("Failed to bind to {}:{}!", ip_addr_.get(), port_.get());
+    throw std::runtime_error("Failed to bind socket");
   }
 
   if (l4_proto_ == L4Proto::TCP) {
     if (listen(sockfd_, 1) < 0) {
         HOLOSCAN_LOG_CRITICAL("Error when listening on TCP port");
-        throw;
+        throw std::runtime_error("Failed to listen on TCP port");
     }
   } else {
     HOLOSCAN_LOG_INFO("Network RX operator bound to {}:{}", ip_addr_.get(), port_.get());
@@ -92,39 +93,40 @@ void BasicNetworkOpRx::initialize() {
 void BasicNetworkOpRx::compute([[maybe_unused]] InputContext&, OutputContext& op_output,
                                [[maybe_unused]] ExecutionContext&) {
   HOLOSCAN_LOG_DEBUG("BasicNetworkOpRx::compute");
-  sockaddr_in addr;
-  socklen_t from_len;
-  from_len = sizeof(addr);
 
   if (l4_proto_ == L4Proto::TCP && !connected_) {
     HOLOSCAN_LOG_INFO("Waiting for incoming TCP connection on {}:{}", ip_addr_.get(), port_.get());
-    if ((tcp_sock_ = accept(sockfd_, (struct sockaddr*)&server_addr_,
-                            (socklen_t*)&server_addr_)) < 0) {
+    socklen_t server_addr_len = sizeof(server_addr_);
+    if ((tcp_sock_ = accept(sockfd_, (struct sockaddr*)&server_addr_, &server_addr_len)) < 0) {
         HOLOSCAN_LOG_CRITICAL("Failed to accept incoming TCP connection");
-        throw;
+        throw std::runtime_error("Failed to accept TCP connection");
     }
 
     HOLOSCAN_LOG_INFO("Successfully attached to incoming connection");
     connected_ = true;
   }
 
-  if (byte_cnt_ == 0) { pkt_buf = new uint8_t[max_payload_size_.get() * batch_size_.get()]; }
+  if (!pkt_buf) {
+    pkt_buf = std::make_unique<uint8_t[]>(max_payload_size_.get() * batch_size_.get());
+  }
 
   while (pkts_in_batch_ < batch_size_.get()) {
     int n;
+    sockaddr_in addr;
+    socklen_t from_len = sizeof(addr);
 
     if (l4_proto_ == L4Proto::UDP) {
       n = recvfrom(sockfd_,
-                  &pkt_buf[byte_cnt_],
+                  &pkt_buf.get()[byte_cnt_],
                   max_payload_size_.get(),
                   MSG_DONTWAIT,
                   (sockaddr*)&addr,
                   &from_len);
-    } else if (l4_proto_ == L4Proto::TCP) {
+    } else { // TCP
       n = recv(tcp_sock_,
-                  &pkt_buf[byte_cnt_],
+                  &pkt_buf.get()[byte_cnt_],
                   max_payload_size_.get(),
-                  0);
+                  MSG_DONTWAIT);
     }
 
     if (n > 0) {
@@ -135,7 +137,7 @@ void BasicNetworkOpRx::compute([[maybe_unused]] InputContext&, OutputContext& op
     }
   }
 
-  auto msg = std::make_shared<NetworkOpBurstParams>(pkt_buf, byte_cnt_, pkts_in_batch_);
+  auto msg = std::make_shared<NetworkOpBurstParams>(pkt_buf.release(), byte_cnt_, pkts_in_batch_);
   byte_cnt_ = 0;
   pkts_in_batch_ = 0;
 
