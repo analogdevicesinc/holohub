@@ -1,11 +1,8 @@
-function [v, modulation] = classifyModulation(inputSig, chan) %#codegen
+function [v, modulation] = classifyModulation(inputSig) %#codegen
 assert(isa(inputSig, 'int16') && all(size(inputSig) == [8192, 1]));
 
-assert(isa(chan, 'uint8') && isreal(chan) && all(size(chan) == [1,1]), ...
-    'Channel number must be an integer between 1 and 4.');
-
 coder.gpu.kernelfun();
-% input signal size is 1024-by-2
+% input signal size is 8192-by-1
 
 % parameters
 ModelFile = 'mod_classify_model.mat'; % file that saves the neural network model
@@ -20,23 +17,18 @@ if isempty(model)
     model = coder.loadDeepLearningNetwork(ModelFile, 'mynet');
 end
 
-%Changes CJ
-selectedChannel_i = complex(zeros(1024, 1, 'single')); % Preallocate for fixed size
-selectedChannel = complex(zeros(1024, 1, 'single')); % Preallocate for fixed size
-index = 1;
-for i = double(2*chan-1):double(8):double(8192)
-    % selectedChannel(index) =  single(inputSig(i))/32766.0 + 1i * single(inputSig(i+1))/32766.0;
-    selectedChannel(index) =  single(inputSig(i))+ 1i * single(inputSig(i+1));
-    index = index + 1;
-end
+% Changes CJ
+i_samples = single(inputSig(1:2:end-1));
+q_samples = single(inputSig(2:2:end));
+
+selectedChannel = complex(i_samples, q_samples);
 
 framePower = mean(abs(selectedChannel).^2);
-selectedChannel_i = selectedChannel / sqrt(framePower);
-
+selectedChannel = selectedChannel / sqrt(framePower);
 %End Changes
 
-inputSigI = real(selectedChannel_i);
-inputSigQ = imag(selectedChannel_i);
+inputSigI = real(selectedChannel);
+inputSigQ = imag(selectedChannel);
 inputSigIQ = [inputSigI, inputSigQ];
 
 % Predict the Signal Modulation
