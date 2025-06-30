@@ -30,8 +30,8 @@ advanced_network:
     version: 1
     manager: "dpdk"
     master_core: 3
-    debug: false
-    log_level: "warn"
+    debug: true
+    log_level: "debug"
 
     memory_regions:
     - name: "Data_RX_CPU"
@@ -40,18 +40,18 @@ advanced_network:
       access:
         - local
       num_bufs: 8192   # 3 x batch_size
-      buf_size: 9000
+      buf_size: 8234
 
     interfaces:
     - name: data2
-      address: 0000:a2:00.0
+      address: 0000:17:00.0
       flow_isolation: true
       rx:
         - queues:
           - name: "Data"
             id: 0
             cpu_core: 8
-            batch_size: 100
+            batch_size: 256
             output_port: "adv_rx_out"
             memory_regions:
               - "Data_RX_CPU"
@@ -62,12 +62,13 @@ advanced_network:
                 type: queue
                 id: 0
               match:
-                udp_src: 4096
-                udp_dst: 4096
+                udp_src: 4660
+                udp_dst: 22136
 
 bench_rx:
   gpu_direct: false         # Set to true if using a GPU region for the Rx queues.
   split_boundary: false     # Byte boundary where header and data is split, 0 if no split
-  batch_size: 100
-  max_packet_size: 9000
+  batch_size: 256
+  max_packet_size: 8234
   header_size: 0
+  out_file: "modulation_results.txt"
