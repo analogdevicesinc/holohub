@@ -16,8 +16,12 @@
  */
 
 #include <holoscan/holoscan.hpp>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
 
 #include "classifyModulation.h"
+#include "classifyModulation_initialize.h"
 #include "classifyModulation_terminate.h"
 #include "basic_network_operator_rx.h"
 
@@ -28,58 +32,65 @@ class MatlabClassifyModulationOp : public Operator {
 
   MatlabClassifyModulationOp() = default;
 
-  Parameter<std::string> out_file_;
-  std::ofstream outfile_;
-
   void setup(OperatorSpec& spec) override {
     spec.input<std::shared_ptr<NetworkOpBurstParams>>("burst_in");
-    spec.param<std::string>(
-      out_file_, "out_file", "Out File Name", "modulation_results.txt");
+    spec.param(out_file_, "out_file", "Out File Name", "modulation_results.txt");
   }
 
-  void start() {
-    outfile_.open(out_file_.get(), std::ios_base::out);
+  void start() override {
+    classifyModulation_initialize();
+
+    outfile_.open(out_file_.get(), std::ios_base::out | std::ios_base::trunc);
+    if (!outfile_.is_open()) {
+      HOLOSCAN_LOG_ERROR("Failed to open output file: {}", out_file_.get());
+    }
   }
 
-  void stop() {
+  void stop() override {
     classifyModulation_terminate();
-    outfile_.close();
+
+    if (outfile_.is_open()) {
+      outfile_.close();
+    }
   }
 
   void compute(InputContext& op_input, OutputContext& op_output,
                ExecutionContext& context) override {
-    std::vector<float> v(5);
-    std::vector<double> modulation(5);
-
     // Get input message
-    auto in = op_input.receive<std::shared_ptr<NetworkOpBurstParams>>("burst_in").value();
-    int16_t* val = reinterpret_cast<int16_t*>(in->data);
+    auto in_message = op_input.receive<std::shared_ptr<NetworkOpBurstParams>>("burst_in");
+    if (!in_message) {
+      HOLOSCAN_LOG_WARN("Failed to receive message on 'burst_in'.");
+      return;
+    }
+    auto in_data = in_message.value();
+    int16_t* val = reinterpret_cast<int16_t*>(in_data->data);
+
+    float v;
+    double modulation;
 
     // Call MATLAB CUDA function to do modulation classification
-    for (int i = 1; i < 5; i++) { classifyModulation(val, i, &v[i], &modulation[i]); }
+    classifyModulation(val, &v, &modulation);
 
-    // Create output message
-    HOLOSCAN_LOG_INFO("Confidence {}", v);
-    // Log modulation information
-    HOLOSCAN_LOG_INFO("Modulation {}", modulation);
+    HOLOSCAN_LOG_INFO("Confidence: {}", v);
+    HOLOSCAN_LOG_INFO("Modulation: {}", modulation);
 
-    // Move file pointer to the beginning
-    outfile_.seekp(0, std::ios::beg);
+    if (outfile_.is_open()) {
+      outfile_.seekp(0, std::ios::beg);
 
-    // Save i, v, and modulation to a txt file
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
+      auto t = std::time(nullptr);
+      auto tm = *std::localtime(&t);
 
-    outfile_ << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << std::endl;
-    for (int i = 1; i < 5; i++) { outfile_ << modulation[i] << std::endl; }
-    for (int i = 1; i < 5; i++) { outfile_ << v[i] << std::endl; }
+      outfile_ << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << std::endl;
+      outfile_ << "Modulation: " << modulation << std::endl;
+      outfile_ << "Confidence: " << v << std::endl;
 
-    delete[] in->data;
-
-    outfile_.flush();
+      outfile_.flush();
+    }
   }
 
  private:
+  Parameter<std::string> out_file_;
+  std::ofstream outfile_;
 };
 
 }  // namespace holoscan::ops
