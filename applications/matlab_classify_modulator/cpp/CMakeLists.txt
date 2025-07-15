@@ -42,6 +42,7 @@ target_include_directories(matlab_classify_modulator
   "${CMAKE_CURRENT_SOURCE_DIR}/${REL_PTH_MATLAB_CODEGEN}/dll/classifyModulation"
   "$ENV{MATLAB_ROOT}/extern/include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../../../operators/basic_network
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../../operators/iio_controller
 )
 
 target_link_libraries(matlab_classify_modulator
@@ -49,6 +50,7 @@ target_link_libraries(matlab_classify_modulator
   holoscan::core
   matlab_classyfy_modulation_lib
   basic_network
+  iio_controller
 )
 
 set_target_properties(matlab_classify_modulator PROPERTIES
