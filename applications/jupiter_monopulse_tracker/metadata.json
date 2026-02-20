@@ -1,0 +1,35 @@
+{
+	"application": {
+		"name": "Jupiter Monopulse Tracker",
+		"authors": [
+			{
+				"name": "Andrei-Fabian Pop",
+				"affiliation": "Analog Devices Inc."
+			}
+		],
+		"language": "Python",
+		"version": "1.0.0",
+		"changelog": {
+			"1.0": "Initial Release"
+		},
+		"holoscan_sdk": {
+			"minimum_required_version": "2.6.0",
+			"tested_versions": [
+				"2.6.0"
+			]
+		},
+		"platforms": ["aarch64"],
+		"tags": ["radar", "phased-array", "monopulse", "tracking", "sdr", "adrv9002"],
+		"ranking": 3,
+		"dependencies": {
+			"operators": [
+				"monopulse_tracker",
+				"iio_controller"
+			]
+		},
+		"run": {
+			"command": "python3 <holohub_app_source>/tracker.py",
+			"workdir": "holohub_app_source"
+		}
+	}
+}
