@@ -38,6 +38,8 @@ find_library(
 
 add_library(
   iio_controller SHARED
+  iio_api.hpp
+  iio_api_v0.cpp
   iio_params.hpp
   iio_attribute_read.hpp
   iio_attribute_read.cpp
@@ -73,6 +75,6 @@ install(
   COMPONENT iio_controller-cpp)
 
 install(
-  FILES iio_controller.hpp iio_params.hpp
+  FILES iio_controller.hpp iio_params.hpp iio_api.hpp
   DESTINATION include/holoscan/operators/iio_controller
   COMPONENT iio_controller-cpp)
