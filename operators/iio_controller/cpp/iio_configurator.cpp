@@ -16,7 +16,6 @@
  */
 
 #include "iio_configurator.hpp"
-#include <iio.h>
 #include <yaml-cpp/node/detail/iterator_fwd.h>
 #include <gxf/core/gxf.h>
 #include <holoscan/logger/logger.hpp>
@@ -45,7 +44,7 @@ void IIOConfigurator::parse_setup(const YAML::Node& setup_node, iio_context* ctx
     if (device.IsMap()) {
       for (const auto& dev : device) {
         std::string dev_name = dev.first.as<std::string>();
-        iio_device* iio_dev = iio_context_find_device(ctx, dev_name.c_str());
+        iio_device* iio_dev = api_->find_device(ctx, dev_name);
         if (!iio_dev) {
           HOLOSCAN_LOG_ERROR("Failed to find device: {}", dev_name);
           // Note: Using continue instead of stopping execution for missing devices in setup
@@ -62,7 +61,7 @@ void IIOConfigurator::parse_setup(const YAML::Node& setup_node, iio_context* ctx
 }
 
 void IIOConfigurator::parse_device(const YAML::Node& device_node, iio_device* dev) {
-  HOLOSCAN_LOG_INFO("DEVICE: {}", iio_device_get_name(dev));
+  HOLOSCAN_LOG_INFO("DEVICE: {}", api_->device_name(dev));
   if (device_node["attrs"]) {
     auto& attrs = device_node["attrs"];
     for (const auto& attr : attrs) { parse_attribute(attr, dev); }
@@ -87,7 +86,7 @@ void IIOConfigurator::parse_device(const YAML::Node& device_node, iio_device* de
       for (const auto& input_channel : input_channels) {
         for (const auto& channel : input_channel) {
           std::string channel_name = channel.first.as<std::string>();
-          iio_channel* chan = iio_device_find_channel(dev, channel_name.c_str(), false);
+          iio_channel* chan = api_->find_channel(dev, channel_name, false);
           if (!chan) {
             HOLOSCAN_LOG_ERROR("Failed to find input channel: {}", channel_name);
             // Note: Using continue instead of stopping execution for missing channels in setup
@@ -105,7 +104,7 @@ void IIOConfigurator::parse_device(const YAML::Node& device_node, iio_device* de
       for (const auto& output_channel : output_channels) {
         for (const auto& channel : output_channel) {
           std::string channel_name = channel.first.as<std::string>();
-          iio_channel* chan = iio_device_find_channel(dev, channel_name.c_str(), true);
+          iio_channel* chan = api_->find_channel(dev, channel_name, true);
           if (!chan) {
             HOLOSCAN_LOG_ERROR("Failed to find output channel: {}", channel_name);
             // Note: Using continue instead of stopping execution for missing channels in setup
@@ -131,28 +130,25 @@ void IIOConfigurator::parse_attribute(const YAML::Node& attr_node, iio_device* d
   std::string attr_name = it->first.as<std::string>();
   std::string attr_value = it->second.as<std::string>();
 
-  ssize_t res = 0;
   std::string type_str;
-
   switch (type) {
-    case IIODeviceAttrType::DEVICE:
-      res = iio_device_attr_write(dev, attr_name.c_str(), attr_value.c_str());
-      break;
     case IIODeviceAttrType::DEBUG:
-      res = iio_device_debug_attr_write(dev, attr_name.c_str(), attr_value.c_str());
       type_str = "debug";
       break;
     case IIODeviceAttrType::BUFFER:
-      res = iio_device_buffer_attr_write(dev, attr_name.c_str(), attr_value.c_str());
       type_str = "buffer";
       break;
+    case IIODeviceAttrType::DEVICE:
+      break;
   }
+
+  ssize_t res = api_->write_attr(dev, type, attr_name, attr_value);
 
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to write {} attribute '{}' to device '{}'",
                        type_str.empty() ? "" : type_str,
                        attr_name,
-                       iio_device_get_name(dev));
+                       api_->device_name(dev));
     return;
   } else {
     HOLOSCAN_LOG_INFO(
@@ -182,13 +178,13 @@ void IIOConfigurator::parse_attribute(const YAML::Node& attr_node, iio_channel* 
   std::string attr_name = it->first.as<std::string>();
   std::string attr_value = it->second.as<std::string>();
 
-  ssize_t res = iio_channel_attr_write(chan, attr_name.c_str(), attr_value.c_str());
+  ssize_t res = api_->write_attr(chan, attr_name, attr_value);
   if (res < 0) {
     HOLOSCAN_LOG_ERROR(
-        "Failed to write attribute '{}' to channel '{}'", attr_name, iio_channel_get_id(chan));
+        "Failed to write attribute '{}' to channel '{}'", attr_name, api_->channel_id(chan));
     return;
   } else {
-    HOLOSCAN_LOG_INFO("{}/{} => {}", iio_channel_get_id(chan), attr_name, attr_value);
+    HOLOSCAN_LOG_INFO("{}/{} => {}", api_->channel_id(chan), attr_name, attr_value);
   }
 
   ++it;  // Move to the next attribute (shouldn't be any)
@@ -211,7 +207,7 @@ void IIOConfigurator::compute(InputContext&, OutputContext&, ExecutionContext& c
       std::string uri = cfg["uri"].as<std::string>();
       HOLOSCAN_LOG_INFO("IIOConfigurator URI: {}", uri);
 
-      iio_context* ctx = iio_create_context_from_uri(uri.c_str());
+      iio_context* ctx = api_->create_context(uri);
       if (ctx == nullptr) {
         HOLOSCAN_LOG_ERROR("Failed to create IIO context from URI: {}", uri);
         HOLOSCAN_LOG_ERROR(

@@ -72,6 +72,11 @@ class IIOApiV0 : public IIOApi {
     return iio_device_find_channel(dev, name.c_str(), is_output);
   }
 
+  std::string device_name(const iio_device* dev) override {
+    const char* name = iio_device_get_name(dev);
+    return name ? name : "";
+  }
+
   std::string channel_id(const iio_channel* chn) override {
     const char* id = iio_channel_get_id(chn);
     return id ? id : "";

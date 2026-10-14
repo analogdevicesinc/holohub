@@ -17,12 +17,13 @@
 
 #pragma once
 
-#include <iio.h>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
 #include <holoscan/core/operator_spec.hpp>
 #include <holoscan/holoscan.hpp>
 #include <holoscan/logger/logger.hpp>
+#include <memory>
+#include "iio_api.hpp"
 #include "iio_params.hpp"
 
 namespace holoscan::ops {
@@ -45,14 +46,12 @@ class IIOAttributeRead : public holoscan::Operator {
   Parameter<bool> channel_is_output_;
   Parameter<std::string> attr_name_p_;
 
+  std::unique_ptr<IIOApi> api_ = make_iio_api();
   iio_context* ctx_;
   iio_device* dev_;
   iio_channel* chan_;
   std::string attr_name_;
   attr_type_t attr_type_;
-
-  char buffer[1024];
-  ssize_t ret = -1;
 
   // Error flags for initialization failures
   bool ctx_creation_failed_ = false;

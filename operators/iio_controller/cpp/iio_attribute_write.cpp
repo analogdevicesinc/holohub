@@ -16,7 +16,6 @@
  */
 
 #include "iio_attribute_write.hpp"
-#include <iio.h>
 #include <gxf/core/gxf.h>
 
 using namespace holoscan::ops;
@@ -46,7 +45,7 @@ void IIOAttributeWrite::initialize() {
   attr_name_ = attr_name_p_.get();
 
   // Cannot work without a context
-  ctx_ = iio_create_context_from_uri(ctx_p_.get().c_str());
+  ctx_ = api_->create_context(ctx_p_.get());
   if (!ctx_) {
     HOLOSCAN_LOG_ERROR("Failed to create IIO context from URI: {}", ctx_p_.get());
     ctx_creation_failed_ = true;
@@ -55,7 +54,7 @@ void IIOAttributeWrite::initialize() {
   attr_type_ = attr_type_t::CONTEXT;
 
   if (!dev_p_.get().empty()) {
-    dev_ = iio_context_find_device(ctx_, dev_p_.get().c_str());
+    dev_ = api_->find_device(ctx_, dev_p_.get());
     if (dev_ == nullptr) {
       HOLOSCAN_LOG_ERROR("Failed to find IIO device: {}", dev_p_.get());
       dev_not_found_ = true;
@@ -67,7 +66,7 @@ void IIOAttributeWrite::initialize() {
   }
 
   if (dev_ && !chan_p_.get().empty()) {
-    chan_ = iio_device_find_channel(dev_, chan_p_.get().c_str(), channel_is_output_.get());
+    chan_ = api_->find_channel(dev_, chan_p_.get(), channel_is_output_.get());
     if (chan_ == nullptr) {
       HOLOSCAN_LOG_ERROR(
           "Failed to find IIO channel: {} (output: {})", chan_p_.get(), channel_is_output_.get());
@@ -116,21 +115,21 @@ void IIOAttributeWrite::compute(InputContext& op_input, OutputContext&, Executio
     case attr_type_t::DEVICE: {
       HOLOSCAN_LOG_DEBUG("Device attribute");
       // In the current API we don't know the type of the attribute, so we try all possibilities
-      ret = iio_device_attr_write(dev_, attr_name_.c_str(), value.c_str());
+      ssize_t ret = api_->write_attr(dev_, IIODeviceAttrType::DEVICE, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to write {} in device attribute {}", value, attr_name_);
       } else {
         return;
       }
 
-      ret = iio_device_debug_attr_write(dev_, attr_name_.c_str(), value.c_str());
+      ret = api_->write_attr(dev_, IIODeviceAttrType::DEBUG, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to write {} in device debug attribute {}", value, attr_name_);
       } else {
         return;
       }
 
-      ret = iio_device_buffer_attr_write(dev_, attr_name_.c_str(), value.c_str());
+      ret = api_->write_attr(dev_, IIODeviceAttrType::BUFFER, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to write {} in device buffer attribute {}", value, attr_name_);
       } else {
@@ -142,9 +141,9 @@ void IIOAttributeWrite::compute(InputContext& op_input, OutputContext&, Executio
     case attr_type_t::CHANNEL: {
       HOLOSCAN_LOG_DEBUG("Channel attribute");
       // This is a channel attribute (or mistake)
-      ret = iio_channel_attr_write(chan_, attr_name_p_.get().c_str(), value.c_str());
+      ssize_t ret = api_->write_attr(chan_, attr_name_, value);
       if (ret < 0) {
-        HOLOSCAN_LOG_DEBUG("Failed to write {} in channel attribute {}", value, attr_name_p_.get());
+        HOLOSCAN_LOG_DEBUG("Failed to write {} in channel attribute {}", value, attr_name_);
         return;
       }
 

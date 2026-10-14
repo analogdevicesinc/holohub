@@ -17,7 +17,6 @@
 
 #include "iio_attribute_read.hpp"
 #include <gxf/core/gxf.h>
-#include <iio.h>
 
 using namespace holoscan::ops;
 
@@ -45,7 +44,7 @@ void IIOAttributeRead::initialize() {
   attr_name_ = attr_name_p_.get();
 
   // Cannot work without a context
-  ctx_ = iio_create_context_from_uri(ctx_p_.get().c_str());
+  ctx_ = api_->create_context(ctx_p_.get());
   if (!ctx_) {
     HOLOSCAN_LOG_ERROR("Failed to create IIO context from URI: {}", ctx_p_.get());
     ctx_creation_failed_ = true;
@@ -54,7 +53,7 @@ void IIOAttributeRead::initialize() {
   attr_type_ = attr_type_t::CONTEXT;
 
   if (!dev_p_.get().empty()) {
-    dev_ = iio_context_find_device(ctx_, dev_p_.get().c_str());
+    dev_ = api_->find_device(ctx_, dev_p_.get());
     if (dev_ == nullptr) {
       HOLOSCAN_LOG_ERROR("Failed to find IIO device: {}", dev_p_.get());
       dev_not_found_ = true;
@@ -66,7 +65,7 @@ void IIOAttributeRead::initialize() {
   }
 
   if (dev_ && !chan_p_.get().empty()) {
-    chan_ = iio_device_find_channel(dev_, chan_p_.get().c_str(), channel_is_output_.get());
+    chan_ = api_->find_channel(dev_, chan_p_.get(), channel_is_output_.get());
     if (chan_ == nullptr) {
       HOLOSCAN_LOG_ERROR(
           "Failed to find IIO channel: {} (output: {})", chan_p_.get(), channel_is_output_.get());
@@ -99,51 +98,47 @@ void IIOAttributeRead::compute(InputContext&, OutputContext& op_output, Executio
     return;
   }
 
+  std::string value;
+  ssize_t ret;
+
   switch (attr_type_) {
     case attr_type_t::CONTEXT: {
       HOLOSCAN_LOG_DEBUG("Context attribute");
 
-      uint ctx_attr_index = 0;
-      uint ctx_attr_count = iio_context_get_attrs_count(ctx_);
-      const char* value;
-
-      for (ctx_attr_index = 0; ctx_attr_index < ctx_attr_count; ctx_attr_index++) {
-        value = iio_context_get_attr_value(ctx_, attr_name_.c_str());
-        if (value == nullptr) {
-          HOLOSCAN_LOG_ERROR("Failed to get context attribute value");
-          return;
-        }
-
-        HOLOSCAN_LOG_DEBUG("ctx attr: {} = {}", attr_name_, value);
-        op_output.emit(std::string(value), "value");
+      ret = api_->read_attr(ctx_, attr_name_, value);
+      if (ret < 0) {
+        HOLOSCAN_LOG_ERROR("Failed to get context attribute value");
         return;
       }
-      break;
+
+      HOLOSCAN_LOG_DEBUG("ctx attr: {} = {}", attr_name_, value);
+      op_output.emit(value, "value");
+      return;
     }
     case attr_type_t::DEVICE: {
       HOLOSCAN_LOG_DEBUG("Device attribute");
       // In the current API we don't know the type of the attribute, so we try all possibilities
-      ret = iio_device_attr_read(dev_, attr_name_.c_str(), buffer, sizeof(buffer));
+      ret = api_->read_attr(dev_, IIODeviceAttrType::DEVICE, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to read device attribute {}", attr_name_);
       } else {
-        op_output.emit(std::string(buffer), "value");
+        op_output.emit(value, "value");
         return;
       }
 
-      ret = iio_device_debug_attr_read(dev_, attr_name_.c_str(), buffer, sizeof(buffer));
+      ret = api_->read_attr(dev_, IIODeviceAttrType::DEBUG, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to read device debug attribute {}", attr_name_);
       } else {
-        op_output.emit(std::string(buffer), "value");
+        op_output.emit(value, "value");
         return;
       }
 
-      ret = iio_device_buffer_attr_read(dev_, attr_name_.c_str(), buffer, sizeof(buffer));
+      ret = api_->read_attr(dev_, IIODeviceAttrType::BUFFER, attr_name_, value);
       if (ret < 0) {
         HOLOSCAN_LOG_DEBUG("Failed to read device buffer attribute {}", attr_name_);
       } else {
-        op_output.emit(std::string(buffer), "value");
+        op_output.emit(value, "value");
         return;
       }
 
@@ -152,13 +147,13 @@ void IIOAttributeRead::compute(InputContext&, OutputContext& op_output, Executio
     case attr_type_t::CHANNEL: {
       HOLOSCAN_LOG_DEBUG("Channel attribute");
       // This is a channel attribute (or mistake)
-      ret = iio_channel_attr_read(chan_, attr_name_p_.get().c_str(), buffer, sizeof(buffer));
+      ret = api_->read_attr(chan_, attr_name_, value);
       if (ret < 0) {
-        HOLOSCAN_LOG_DEBUG("Failed to read channel attribute {}", attr_name_p_.get());
+        HOLOSCAN_LOG_DEBUG("Failed to read channel attribute {}", attr_name_);
         return;
       }
 
-      op_output.emit(std::string(buffer), "value");
+      op_output.emit(value, "value");
       break;
     }
     default:

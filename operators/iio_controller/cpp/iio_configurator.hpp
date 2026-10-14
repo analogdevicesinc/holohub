@@ -17,12 +17,13 @@
 
 #pragma once
 
-#include <iio.h>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
 #include <holoscan/core/operator_spec.hpp>
 #include <holoscan/holoscan.hpp>
 #include <holoscan/logger/logger.hpp>
+#include <memory>
+#include "iio_api.hpp"
 
 namespace holoscan::ops {
 
@@ -36,8 +37,6 @@ class IIOConfigurator : public Operator {
   void setup(OperatorSpec& spec) override;
   void compute(InputContext& op_input, OutputContext& op_output, ExecutionContext& ec) override;
 
-  enum class IIODeviceAttrType { DEVICE, DEBUG, BUFFER };
-
  private:
   /* YAML IIO context navigation functions */
   void parse_setup(const YAML::Node& setup_node, iio_context* ctx);
@@ -48,6 +47,8 @@ class IIOConfigurator : public Operator {
 
   void parse_channel(const YAML::Node& channel_node, iio_channel* chan);
   void parse_attribute(const YAML::Node& attr_node, iio_channel* chan);
+
+  std::unique_ptr<IIOApi> api_ = make_iio_api();
   Parameter<std::string> cfg_path_p_;
 };
 

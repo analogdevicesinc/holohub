@@ -58,6 +58,7 @@ class IIOApi {
   virtual iio_channel* find_channel(iio_device* dev, const std::string& name,
                                      bool is_output) = 0;
 
+  virtual std::string device_name(const iio_device* dev) = 0;
   virtual std::string channel_id(const iio_channel* chn) = 0;
   virtual bool channel_is_output(const iio_channel* chn) = 0;
   virtual long channel_index(const iio_channel* chn) = 0;
