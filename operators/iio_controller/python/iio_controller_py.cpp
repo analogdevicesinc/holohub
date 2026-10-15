@@ -200,11 +200,11 @@ PYBIND11_MODULE(_iio_controller, m) {
   m.attr("__version__") = "dev";
 #endif
 
-  py::class_<iio_data_format>(m, "IIODataFormat")
+  py::class_<IIODataFormat>(m, "IIODataFormat")
       .def(py::init<>())
-      .def(py::init([](py::object pyiio_format) -> iio_data_format {
+      .def(py::init([](py::object pyiio_format) -> IIODataFormat {
              // Constructor that accepts a pyiio data format object
-             iio_data_format fmt;
+             IIODataFormat fmt;
              fmt.length = pyiio_format.attr("length").cast<unsigned int>();
              fmt.bits = pyiio_format.attr("bits").cast<unsigned int>();
              fmt.shift = pyiio_format.attr("shift").cast<unsigned int>();
@@ -218,15 +218,16 @@ PYBIND11_MODULE(_iio_controller, m) {
            }),
            "Create IIODataFormat from pyiio data format object",
            py::arg("pyiio_format"))
-      .def_readwrite("length", &iio_data_format::length)
-      .def_readwrite("bits", &iio_data_format::bits)
-      .def_readwrite("shift", &iio_data_format::shift)
-      .def_readwrite("is_signed", &iio_data_format::is_signed)
-      .def_readwrite("is_fully_defined", &iio_data_format::is_fully_defined)
-      .def_readwrite("is_be", &iio_data_format::is_be)
-      .def_readwrite("with_scale", &iio_data_format::with_scale)
-      .def_readwrite("scale", &iio_data_format::scale)
-      .def_readwrite("repeat", &iio_data_format::repeat);
+      .def_readwrite("length", &IIODataFormat::length)
+      .def_readwrite("bits", &IIODataFormat::bits)
+      .def_readwrite("shift", &IIODataFormat::shift)
+      .def_readwrite("is_signed", &IIODataFormat::is_signed)
+      .def_readwrite("is_fully_defined", &IIODataFormat::is_fully_defined)
+      .def_readwrite("is_be", &IIODataFormat::is_be)
+      .def_readwrite("with_scale", &IIODataFormat::with_scale)
+      .def_readwrite("scale", &IIODataFormat::scale)
+      .def_readwrite("repeat", &IIODataFormat::repeat)
+      .def_readwrite("offset", &IIODataFormat::offset);
 
   py::class_<iio_channel_info_t>(m, "IIOChannelInfo")
       .def(py::init<>())
@@ -364,7 +365,8 @@ PYBIND11_MODULE(_iio_controller, m) {
       [](py::capsule channel_capsule) -> iio_channel_info_t {
         // Extract the iio_channel pointer from the capsule
         auto* channel = static_cast<const struct iio_channel*>(channel_capsule.get_pointer());
-        return create_channel_info_from_iio_channel(channel);
+        static std::unique_ptr<IIOApi> api = make_iio_api();
+        return create_channel_info_from_iio_channel(*api, channel);
       },
       "Create an IIOChannelInfo structure from an IIO channel pointer",
       py::arg("channel"));

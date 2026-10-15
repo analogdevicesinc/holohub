@@ -29,8 +29,8 @@
 #include <iio.h>
 #include <cmath>
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 static constexpr int G_NUM_READS = 10;
@@ -109,6 +109,7 @@ class BasicIIOBufferEmitterOP : public Operator {
     const std::string channel_name = "voltage0";
     const std::string channel_name2 = "voltage1";
 
+    auto api = make_iio_api();
     iio_context* ctx = iio_create_context_from_uri(G_URI);
     iio_device* dev = iio_context_find_device(ctx, device_name.c_str());
     iio_channel* chn = iio_device_find_channel(dev, channel_name.c_str(), true);
@@ -128,7 +129,7 @@ class BasicIIOBufferEmitterOP : public Operator {
 
     // Populate enabled channels using the helper function
     if (chn) {
-      iio_channel_info_t ch1_info = create_channel_info_from_iio_channel(chn);
+      iio_channel_info_t ch1_info = create_channel_info_from_iio_channel(*api, chn);
       buffer_info->enabled_channels.push_back(ch1_info);
     } else {
       // Fallback if channel not found
@@ -136,13 +137,13 @@ class BasicIIOBufferEmitterOP : public Operator {
       ch1_info.name = channel_name;
       ch1_info.is_output = true;
       ch1_info.index = 0;
-      memset(&ch1_info.format, 0, sizeof(struct iio_data_format));
+      ch1_info.format = {};
       buffer_info->enabled_channels.push_back(ch1_info);
     }
 
     if (enabled_channels == 2) {
       if (chn2) {
-        iio_channel_info_t ch2_info = create_channel_info_from_iio_channel(chn2);
+        iio_channel_info_t ch2_info = create_channel_info_from_iio_channel(*api, chn2);
         buffer_info->enabled_channels.push_back(ch2_info);
       } else {
         // Fallback if channel not found
@@ -150,7 +151,7 @@ class BasicIIOBufferEmitterOP : public Operator {
         ch2_info.name = channel_name2;
         ch2_info.is_output = true;
         ch2_info.index = 1;
-        memset(&ch2_info.format, 0, sizeof(struct iio_data_format));
+        ch2_info.format = {};
         buffer_info->enabled_channels.push_back(ch2_info);
       }
     }

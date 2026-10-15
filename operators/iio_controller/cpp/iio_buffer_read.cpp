@@ -191,7 +191,7 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
 
     if (chn) {
       // Use the helper function to create channel info
-      iio_channel_info_t chan_info = create_channel_info_from_iio_channel(chn);
+      iio_channel_info_t chan_info = create_channel_info_from_iio_channel(*api_, chn);
       buffer_info->enabled_channels.push_back(chan_info);
     } else {
       HOLOSCAN_LOG_WARN("Failed to find channel {} for info retrieval", enabled_channel_names[i]);
@@ -200,7 +200,7 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
       chan_info.name = enabled_channel_names[i];
       chan_info.is_output = enabled_channel_types[i];
       chan_info.index = 0;
-      memset(&chan_info.format, 0, sizeof(struct iio_data_format));
+      chan_info.format = {};
       buffer_info->enabled_channels.push_back(chan_info);
     }
   }

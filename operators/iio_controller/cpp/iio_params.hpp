@@ -16,10 +16,9 @@
  */
 
 #pragma once
-#include <iio.h>
-#include <cstring>
 #include <string>
 #include <vector>
+#include "iio_api.hpp"
 
 enum class attr_type_t {
   CONTEXT,
@@ -31,8 +30,8 @@ enum class attr_type_t {
 struct iio_channel_info_t {
   std::string name;
   bool is_output;
-  unsigned int index;             // Channel index
-  struct iio_data_format format;  // Channel data format
+  unsigned int index;                   // Channel index
+  holoscan::ops::IIODataFormat format;  // Channel data format
 };
 
 struct iio_buffer_info_t {
@@ -55,13 +54,14 @@ struct iio_buffer_info_t {
  * - Creating channel metadata for custom operators
  * - Needing complete channel information without manual field population
  *
+ * @param api IIOApi instance used to query the channel
  * @param channel Pointer to the IIO channel (must not be null)
  * @return iio_channel_info_t Complete channel information structure
  *
  * @note If the channel pointer is null, returns a default-initialized structure
- * @note If channel index or format retrieval fails, those fields are set to default values
  */
-inline iio_channel_info_t create_channel_info_from_iio_channel(const struct iio_channel* channel) {
+inline iio_channel_info_t create_channel_info_from_iio_channel(holoscan::ops::IIOApi& api,
+                                                                const iio_channel* channel) {
   iio_channel_info_t info;
 
   if (!channel) {
@@ -69,28 +69,17 @@ inline iio_channel_info_t create_channel_info_from_iio_channel(const struct iio_
     info.name = "";
     info.is_output = false;
     info.index = 0;
-    memset(&info.format, 0, sizeof(struct iio_data_format));
+    info.format = {};
     return info;
   }
 
-  // Get channel name
-  const char* name = iio_channel_get_id(channel);
-  info.name = name ? name : "";
+  info.name = api.channel_id(channel);
+  info.is_output = api.channel_is_output(channel);
 
-  // Get channel direction
-  info.is_output = iio_channel_is_output(channel);
-
-  // Get channel index
-  long idx = iio_channel_get_index(channel);
+  long idx = api.channel_index(channel);
   info.index = (idx >= 0) ? static_cast<unsigned int>(idx) : 0;
 
-  // Get channel data format
-  const struct iio_data_format* fmt = iio_channel_get_data_format(channel);
-  if (fmt) {
-    info.format = *fmt;
-  } else {
-    memset(&info.format, 0, sizeof(struct iio_data_format));
-  }
+  info.format = api.channel_format(channel);
 
   return info;
 }
