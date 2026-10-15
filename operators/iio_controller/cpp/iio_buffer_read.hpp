@@ -17,12 +17,13 @@
 
 #pragma once
 
-#include <iio.h>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
 #include <holoscan/core/operator_spec.hpp>
 #include <holoscan/holoscan.hpp>
 #include <holoscan/logger/logger.hpp>
+#include <memory>
+#include "iio_api.hpp"
 
 namespace holoscan::ops {
 
@@ -46,9 +47,10 @@ class IIOBufferRead : public Operator {
   Parameter<std::vector<bool>> enabled_channel_types_p_;
   Parameter<size_t> samples_count_p_;
 
+  std::unique_ptr<IIOApi> api_ = make_iio_api();
   iio_context* ctx_;
   iio_device* dev_;
-  iio_buffer* buffer_;
+  bool buffer_open_ = false;
   size_t sample_size_;
 
   // Error flags for initialization failures

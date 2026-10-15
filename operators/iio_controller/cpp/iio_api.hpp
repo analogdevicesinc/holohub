@@ -71,8 +71,8 @@ class IIOApi {
   virtual ssize_t sample_size(iio_device* dev) = 0;
 
   virtual bool open_buffer(iio_device* dev, size_t samples_count, bool cyclic) = 0;
-  virtual void* refill() = 0;
-  virtual bool push(const void* data, size_t bytes) = 0;
+  virtual ssize_t refill(void** data) = 0;
+  virtual ssize_t push(const void* data, size_t bytes) = 0;
   virtual void close_buffer() = 0;
 
   virtual ssize_t read_attr(iio_context* ctx, const std::string& name,

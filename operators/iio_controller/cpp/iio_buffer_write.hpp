@@ -17,12 +17,13 @@
 
 #pragma once
 
-#include <iio.h>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
 #include <holoscan/core/operator_spec.hpp>
 #include <holoscan/holoscan.hpp>
 #include <holoscan/logger/logger.hpp>
+#include <memory>
+#include "iio_api.hpp"
 
 namespace holoscan::ops {
 
@@ -45,9 +46,10 @@ class IIOBufferWrite : public Operator {
   Parameter<std::vector<bool>> enabled_channel_types_p_;
   Parameter<bool> is_cyclic;
 
+  std::unique_ptr<IIOApi> api_ = make_iio_api();
   iio_context* ctx_ = nullptr;
   iio_device* dev_ = nullptr;
-  iio_buffer* buffer_ = nullptr;
+  bool buffer_open_ = false;
   uint32_t buffer_samples_count_ = 0;
   ssize_t sample_size_ = 0;
 

@@ -17,7 +17,7 @@
 
 #include "iio_buffer_read.hpp"
 #include <gxf/core/gxf.h>
-#include <iio.h>
+#include <cerrno>
 #include <cstring>
 #include "iio_params.hpp"
 
@@ -25,12 +25,12 @@ using namespace holoscan::ops;
 
 void IIOBufferRead::stop() {
   HOLOSCAN_LOG_INFO("IIOBufferRead stop");
-  if (buffer_) {
-    iio_buffer_destroy(buffer_);
-    buffer_ = nullptr;
+  if (buffer_open_) {
+    api_->close_buffer();
+    buffer_open_ = false;
   }
   if (ctx_) {
-    iio_context_destroy(ctx_);
+    api_->destroy_context(ctx_);
     ctx_ = nullptr;
   }
 }
@@ -86,14 +86,14 @@ void IIOBufferRead::initialize() {
     return;
   }
 
-  ctx_ = iio_create_context_from_uri(ctx_p_.get().c_str());
+  ctx_ = api_->create_context(ctx_p_.get());
   if (!ctx_) {
     HOLOSCAN_LOG_ERROR("Failed to create IIO context from URI: {}", ctx_p_.get());
     ctx_creation_failed_ = true;
     return;
   }
 
-  dev_ = iio_context_find_device(ctx_, dev_p_.get().c_str());
+  dev_ = api_->find_device(ctx_, dev_p_.get());
   if (!dev_) {
     HOLOSCAN_LOG_ERROR("Failed to find IIO device: {}", dev_p_.get());
     dev_not_found_ = true;
@@ -105,22 +105,22 @@ void IIOBufferRead::initialize() {
   for (size_t i = 0; i < enabled_channel_names.size(); ++i) {
     std::string& chn_name = enabled_channel_names[i];
     bool chn_type = enabled_channel_types[i];
-    iio_channel* chn = iio_device_find_channel(dev_, chn_name.c_str(), chn_type);
+    iio_channel* chn = api_->find_channel(dev_, chn_name, chn_type);
     if (!chn) {
       HOLOSCAN_LOG_ERROR("Failed to find {} channel {}", chn_type ? "output" : "input", chn_name);
       chan_not_found_ = true;
       return;
     }
 
-    if (!iio_channel_is_enabled(chn)) {
+    if (!api_->is_channel_enabled(chn)) {
       HOLOSCAN_LOG_INFO("Enabled channel: {}", chn_name);
-      iio_channel_enable(chn);
+      api_->enable_channel(chn);
     } else {
       HOLOSCAN_LOG_INFO("Channel {} is already enabled", chn_name);
     }
   }
 
-  ssize_t sample_size = iio_device_get_sample_size(dev_);
+  ssize_t sample_size = api_->sample_size(dev_);
   if (sample_size < 0) {
     HOLOSCAN_LOG_ERROR(
         "Failed to get sample size from device {}; Err code: {}", dev_p_.get(), sample_size);
@@ -129,7 +129,7 @@ void IIOBufferRead::initialize() {
   }
   sample_size_ = static_cast<size_t>(sample_size);
 
-  buffer_ = nullptr;
+  buffer_open_ = false;
 }
 
 void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionContext& context) {
@@ -187,8 +187,7 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
   std::vector<bool>& enabled_channel_types = enabled_channel_types_p_.get();
   for (size_t i = 0; i < enabled_channel_names.size(); ++i) {
     // Get the channel to retrieve complete info
-    iio_channel* chn =
-        iio_device_find_channel(dev_, enabled_channel_names[i].c_str(), enabled_channel_types[i]);
+    iio_channel* chn = api_->find_channel(dev_, enabled_channel_names[i], enabled_channel_types[i]);
 
     if (chn) {
       // Use the helper function to create channel info
@@ -206,18 +205,19 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
     }
   }
 
-  if (!buffer_) {
+  if (!buffer_open_) {
     HOLOSCAN_LOG_INFO(
         "Creating buffer with {} samples of size {} bytes", samples_count_p_.get(), sample_size_);
-    buffer_ = iio_device_create_buffer(dev_, samples_count_p_.get(), false);
-    if (!buffer_) {
+    buffer_open_ = api_->open_buffer(dev_, samples_count_p_.get(), false);
+    if (!buffer_open_) {
       HOLOSCAN_LOG_ERROR("Failed to create buffer, error code {}", errno);
       GxfGraphInterrupt(context.context());
       return;
     }
   }
 
-  ssize_t res = iio_buffer_refill(buffer_);
+  void* buffer_data = nullptr;
+  ssize_t res = api_->refill(&buffer_data);
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to refill buffer. Error code: {}", res);
     return;
@@ -226,7 +226,6 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
   size_t bytes_read = static_cast<size_t>(res);
   buffer_info->samples_count = bytes_read / sample_size_;
 
-  void* buffer_data = iio_buffer_start(buffer_);
   buffer_info->buffer = new int8_t[bytes_read];
   memcpy(buffer_info->buffer, buffer_data, bytes_read);
 

@@ -124,16 +124,17 @@ class IIOApiV0 : public IIOApi {
     return buffer_ != nullptr;
   }
 
-  void* refill() override {
+  ssize_t refill(void** data) override {
     ssize_t ret = iio_buffer_refill(buffer_);
-    if (ret < 0) return nullptr;
-    return iio_buffer_start(buffer_);
+    if (ret < 0) return ret;
+    *data = iio_buffer_start(buffer_);
+    return ret;
   }
 
-  bool push(const void* data, size_t bytes) override {
+  ssize_t push(const void* data, size_t bytes) override {
     void* dst = iio_buffer_start(buffer_);
     memcpy(dst, data, bytes);
-    return iio_buffer_push(buffer_) >= 0;
+    return iio_buffer_push(buffer_);
   }
 
   void close_buffer() override {
