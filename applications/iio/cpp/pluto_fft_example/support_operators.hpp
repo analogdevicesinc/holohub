@@ -27,7 +27,6 @@
 #include "iio_params.hpp"
 
 #include <cuda_runtime.h>
-#include <iio.h>
 #include <matx.h>
 #include <chrono>
 #include <cmath>
@@ -35,6 +34,7 @@
 #include <cstring>
 #include <fstream>
 #include <iomanip>
+#include <memory>
 #include <vector>
 
 using namespace matx;
@@ -243,7 +243,7 @@ class IIOChannelConvertOp : public Operator {
                           size_t samples_per_channel) {
     // Get or create IIO context if needed
     if (!iio_context_) {
-      iio_context_ = iio_create_context_from_uri(G_URI);
+      iio_context_ = api_->create_context(G_URI);
       if (!iio_context_) {
         HOLOSCAN_LOG_ERROR("Failed to create IIO context for channel conversion");
         return;
@@ -252,7 +252,7 @@ class IIOChannelConvertOp : public Operator {
 
     // Get device
     if (!iio_device_) {
-      iio_device_ = iio_context_find_device(iio_context_, input_buffer->device_name.c_str());
+      iio_device_ = api_->find_device(iio_context_, input_buffer->device_name);
       if (!iio_device_) {
         HOLOSCAN_LOG_ERROR("Failed to find IIO device: {}", input_buffer->device_name);
         return;
@@ -262,8 +262,7 @@ class IIOChannelConvertOp : public Operator {
     // Get IIO channels for conversion
     std::vector<iio_channel*> iio_channels;
     for (const auto& ch_info : input_buffer->enabled_channels) {
-      iio_channel* ch =
-          iio_device_find_channel(iio_device_, ch_info.name.c_str(), ch_info.is_output);
+      iio_channel* ch = api_->find_channel(iio_device_, ch_info.name, ch_info.is_output);
       if (ch) {
         iio_channels.push_back(ch);
       } else {
@@ -281,7 +280,7 @@ class IIOChannelConvertOp : public Operator {
 
         for (size_t i = 0; i < samples_per_channel; ++i) {
           // Apply IIO channel conversion (handles scaling, offset, etc.)
-          iio_channel_convert(ch, &output_data[i], &input_data[i]);
+          api_->convert(ch, &output_data[i], &input_data[i]);
         }
 
         HOLOSCAN_LOG_DEBUG("Applied IIO channel conversion for single channel: {}",
@@ -297,7 +296,7 @@ class IIOChannelConvertOp : public Operator {
           size_t idx = sample * num_channels + ch;
 
           // Apply IIO channel conversion for each channel
-          iio_channel_convert(iio_channels[ch], &output_data[idx], &input_data[idx]);
+          api_->convert(iio_channels[ch], &output_data[idx], &input_data[idx]);
         }
       }
 
@@ -306,6 +305,7 @@ class IIOChannelConvertOp : public Operator {
   }
 
   Parameter<bool> convert_channels_;
+  std::unique_ptr<IIOApi> api_ = make_iio_api();
   iio_context* iio_context_;
   iio_device* iio_device_;
 };

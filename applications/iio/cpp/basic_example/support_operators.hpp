@@ -26,7 +26,6 @@
 #include "holoscan/holoscan.hpp"
 #include "iio_params.hpp"
 
-#include <iio.h>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -110,10 +109,10 @@ class BasicIIOBufferEmitterOP : public Operator {
     const std::string channel_name2 = "voltage1";
 
     auto api = make_iio_api();
-    iio_context* ctx = iio_create_context_from_uri(G_URI);
-    iio_device* dev = iio_context_find_device(ctx, device_name.c_str());
-    iio_channel* chn = iio_device_find_channel(dev, channel_name.c_str(), true);
-    iio_channel* chn2 = iio_device_find_channel(dev, channel_name2.c_str(), true);
+    iio_context* ctx = api->create_context(G_URI);
+    iio_device* dev = api->find_device(ctx, device_name);
+    iio_channel* chn = api->find_channel(dev, channel_name, true);
+    iio_channel* chn2 = api->find_channel(dev, channel_name2, true);
 
     std::vector<int16_t> data_vector =
         generateSineWave(total_samples, frequency, amplitude, sample_rate);
@@ -163,12 +162,12 @@ class BasicIIOBufferEmitterOP : public Operator {
 
       // Channel 0
       buffer[buffer_idx] = data_vector[sample_idx];
-      iio_channel_convert_inverse(chn, &buffer[buffer_idx], &buffer[buffer_idx]);
+      api->convert_inverse(chn, &buffer[buffer_idx], &buffer[buffer_idx]);
 
       // Channel 1 (if enabled)
       if (enabled_channels == 2) {
         buffer[buffer_idx + 1] = data_vector2[sample_idx];
-        iio_channel_convert_inverse(chn2, &buffer[buffer_idx + 1], &buffer[buffer_idx + 1]);
+        api->convert_inverse(chn2, &buffer[buffer_idx + 1], &buffer[buffer_idx + 1]);
       }
     }
 
