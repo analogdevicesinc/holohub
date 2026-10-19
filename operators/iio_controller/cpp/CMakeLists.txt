@@ -64,13 +64,15 @@ else()
 endif()
 
 if(LIBIIO_V1)
-  message(FATAL_ERROR "libiio v1 backend not implemented yet")
+  set(IIO_API_BACKEND iio_api_v1.cpp)
+else()
+  set(IIO_API_BACKEND iio_api_v0.cpp)
 endif()
 
 add_library(
   iio_controller SHARED
   iio_api.hpp
-  iio_api_v0.cpp
+  ${IIO_API_BACKEND}
   iio_params.hpp
   iio_attribute_read.hpp
   iio_attribute_read.cpp
