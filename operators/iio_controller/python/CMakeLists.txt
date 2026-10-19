@@ -24,17 +24,6 @@ find_package(
   "/opt/nvidia/holoscan"
   "/workspace/holoscan-sdk/install")
 
-find_library(
-  IIO_LIBRARIES
-  NAMES iio libiio
-  HINTS /usr/lib
-        /usr/lib64
-        /usr/local/lib
-        /usr/local/lib64
-        /opt/lib
-        /opt/lib64
-        REQUIRED)
-
 include(pybind11_add_holohub_module)
 pybind11_add_holohub_module(
   CPP_CMAKE_TARGET

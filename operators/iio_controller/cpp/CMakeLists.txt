@@ -25,16 +25,47 @@ find_package(
   "/opt/nvidia/holoscan"
   "/workspace/holoscan-sdk/install")
 
-find_library(
-  IIO_LIBRARIES
-  NAMES iio libiio
-  HINTS /usr/lib
-        /usr/lib64
-        /usr/local/lib
-        /usr/local/lib64
-        /opt/lib
-        /opt/lib64
-        REQUIRED)
+# Detect the installed libiio major version (v0 vs v1), since their APIs are
+# incompatible. Prefer pkg-config, since it pairs a header with the matching
+# library; fall back to a header-path probe if no .pc file is installed.
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(LIBIIO QUIET IMPORTED_TARGET libiio)
+endif()
+
+if(LIBIIO_FOUND AND LIBIIO_VERSION)
+  if(LIBIIO_VERSION VERSION_LESS 1.0)
+    set(LIBIIO_V1 FALSE)
+  else()
+    set(LIBIIO_V1 TRUE)
+  endif()
+  set(IIO_LIBRARIES PkgConfig::LIBIIO)
+  message(STATUS "libiio ${LIBIIO_VERSION} found via pkg-config")
+else()
+  message(STATUS "pkg-config found no libiio .pc file, falling back to header probe")
+  find_path(IIO_V1_INCLUDE_DIR NAMES iio/iio.h)
+  if(IIO_V1_INCLUDE_DIR)
+    set(LIBIIO_V1 TRUE)
+  else()
+    set(LIBIIO_V1 FALSE)
+  endif()
+
+  find_library(
+    IIO_LIBRARIES
+    NAMES iio libiio
+    HINTS /usr/lib
+          /usr/lib64
+          /usr/local/lib
+          /usr/local/lib64
+          /opt/lib
+          /opt/lib64
+          REQUIRED)
+  message(STATUS "libiio found at ${IIO_LIBRARIES} (v1: ${LIBIIO_V1})")
+endif()
+
+if(LIBIIO_V1)
+  message(FATAL_ERROR "libiio v1 backend not implemented yet")
+endif()
 
 add_library(
   iio_controller SHARED
