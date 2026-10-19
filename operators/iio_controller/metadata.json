@@ -24,7 +24,7 @@
 		"requirements": {
 			"libraries": [{
 				"name": "libiio",
-				"version": "0.26",
+				"version": ">=0.26",
 				"url": "https://github.com/analogdevicesinc/libiio.git"
 			}]
 		}

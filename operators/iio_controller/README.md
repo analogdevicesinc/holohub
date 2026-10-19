@@ -26,8 +26,13 @@ The Industrial I/O (IIO) subsystem is a Linux kernel framework that provides:
 
 ### Software
 
-- libiio (version 0.X)
+- libiio, v0.26+ or v1.x
 - Holoscan SDK
+
+CMake auto-detects which libiio version is installed via pkg-config.
+If both are installed and you need a specific one, point pkg-config
+at it before building, e.g.:
+`PKG_CONFIG_PATH=/path/to/libiio-v0/pkgconfig ./holohub build iio`
 
 ## Operator Types
 
