@@ -181,10 +181,11 @@ class IIOApiV1 : public IIOApi {
   // TX: dequeue the previous block (if any) to reclaim it, copy the new data
   // in, then enqueue it again, starting the stream on the first call.
   //
-  // NOTE: for cyclic buffers, dequeuing a block that is still looping on the
-  // hardware is the part of this backend least exercised against real
-  // hardware so far -- verify cyclic TX carefully.
+  // A cyclic buffer that is already enqueued and streaming must reject any
+  // further push().
   ssize_t push(const void* data, size_t bytes) override {
+    if (started_ && cyclic_) return -EBUSY;
+
     if (started_) {
       int ret = iio_block_dequeue(block_, false);
       if (ret < 0) return ret;
