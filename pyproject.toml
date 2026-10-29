@@ -1,25 +1,28 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Development tooling only. Holoscan SDK 5.0 Modules are C++ libraries shipped
-# as Debian packages; the CMake build adds the Python bindings, and wheel
-# packaging returns in a later release. This file pins the Holoscan CLI for
-# `uv run holoscan ...` and configures ruff for the repository's helper scripts.
+# Development tooling only. This Module's C++ operators ship with pybind11
+# Python bindings built alongside them via CMake; this file pins the Holoscan
+# CLI for `uv run holoscan ...` and configures ruff for the repository's
+# helper scripts. The CLI version is pinned to 4.6.0 to match this module's
+# actual Holoscan SDK target (see metadata.json) and the CLI version already
+# bundled in that SDK's own container image.
 
 [project]
 name = "holoscan-iio-controller"
-version = "0.1.0"
-description = "A Holoscan Module extending the Holoscan SDK."
+version = "1.0.0"
+description = "IIO Controller operators for Analog Devices SDR hardware (ADALM-Pluto) via libiio v0/v1"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "Your Name" },
+    { name = "Andrei-Fabian Pop" },
+    { name = "Marius Lucacel" },
 ]
 requires-python = ">=3.12"
 
 [dependency-groups]
 dev = [
-    "holoscan-cli==5.0.0",
+    "holoscan-cli==4.6.0",
     "ruff",
     "pytest",
 ]
@@ -47,8 +50,7 @@ cuda = 13
 # docker-run-args = ["--network=host"]
 
 [tool.holoscan.base-images]
-x86_64 = "nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13"
-aarch64 = "nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13"
+x86_64 = "nvcr.io/nvidia/clara-holoscan/holoscan:v4.6.0-cuda13"
 
 [tool.ruff]
 line-length = 100

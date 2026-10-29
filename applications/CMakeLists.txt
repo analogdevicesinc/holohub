@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 # Each application is gated on its own APP_<name> option, defaulting to ${BUILD_ALL}.

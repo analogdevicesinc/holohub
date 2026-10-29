@@ -1,21 +1,20 @@
-iio-controller
-Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+holoscan-iio-controller
+Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 
-iio-controller uses the following open source software. None of these components are vendored in this repository.
+holoscan-iio-controller uses the following third-party software.
 
 Holoscan SDK (https://github.com/nvidia-holoscan/holoscan-sdk)
 Copyright (c) NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 Licensed under Apache-2.0 (https://github.com/nvidia-holoscan/holoscan-sdk/blob/main/LICENSE.txt)
 The operators link the Holoscan SDK installed on the system. This package does not redistribute it.
 
-nanobind (https://github.com/wjakob/nanobind)
-Copyright (c) 2022 Wenzel Jakob. All rights reserved.
-Version 3.0.1
-Licensed under BSD-3-Clause (https://github.com/wjakob/nanobind/blob/v3.0.1/LICENSE)
-Compiled into the Python extension module. The Debian package does not include the Python bindings.
+pybind11 (https://github.com/pybind/pybind11)
+Copyright (c) 2016 Wenzel Jakob. All rights reserved.
+Licensed under BSD-3-Clause (https://github.com/pybind/pybind11/blob/master/LICENSE)
+Compiled into the Python extension module (operators/iio_controller/python/).
 
-GoogleTest (https://github.com/google/googletest)
-Copyright 2008, Google Inc. All rights reserved.
-Version 1.17.0
-Licensed under BSD-3-Clause (https://github.com/google/googletest/blob/v1.17.0/LICENSE)
-Used only to build and run unit tests. It is not installed by this package.
+applications/iio/cpp/pluto_fft_example/simple_fft.{hpp,cu} is derived from
+operators/fft in nvidia-holoscan/holohub, with the VITA 49.2 metadata
+passthrough parameters removed.
+Copyright (c) 2024-2026 Voyager Technologies, Inc.
+Licensed under Apache-2.0. See the file headers for the full attribution.
