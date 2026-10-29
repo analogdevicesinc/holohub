@@ -1,11 +1,11 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 4.0)
 
 project(holoscan_iio_controller
-    VERSION 0.1.0
-    DESCRIPTION "A Holoscan Module extending the Holoscan SDK."
+    VERSION 1.0.0
+    DESCRIPTION "IIO Controller operators for Analog Devices SDR hardware (ADALM-Pluto) via libiio v0/v1"
     LANGUAGES CXX
 )
 
@@ -18,6 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Dependencies
 # ---------------------------------------------------------------------------
 find_package(holoscan 4.6 REQUIRED CONFIG COMPONENTS core)
+include(CTest)
 
 # ---------------------------------------------------------------------------
 # Build options

@@ -8,12 +8,6 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distrib
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -42,3 +36,29 @@ pybind11_add_holohub_module(
   "IIOAttributeRead, IIOAttributeWrite, IIOBufferInfo, IIOBufferRead, IIOBufferWrite, IIOConfigurator, IIOChannelInfo, IIODataFormat"
   SOURCES
   iio_controller_py.cpp)
+
+if(BUILD_TESTING)
+  set(PYTHON_TEST_ENV
+      "PYTHONPATH=${CMAKE_BINARY_DIR}/python/lib:$ENV{PYTHONPATH}"
+  )
+
+  add_test(
+    NAME iio_controller_python_import_test
+    COMMAND python3 -c
+            "from holoscan.iio_controller import IIOAttributeRead; assert IIOAttributeRead.__name__ == 'IIOAttributeRead'"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+
+  add_test(
+    NAME iio_controller_python_pytest
+    COMMAND ${Python3_EXECUTABLE} -m pytest ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  set_tests_properties(
+    iio_controller_python_import_test
+    iio_controller_python_pytest
+    PROPERTIES
+      ENVIRONMENT "${PYTHON_TEST_ENV}"
+  )
+endif()
