@@ -2,4 +2,12 @@ import holoscan.core
 import holoscan.gxf
 
 from ._@MODULE_NAME@ import @MODULE_CLASS_NAME@
-_register_types = getattr(_@MODULE_NAME@, \"register_types\", None) if False else None
+
+try:
+    from ._@MODULE_NAME@ import register_types as _register_types
+
+    from holoscan.core import io_type_registry
+
+    _register_types(io_type_registry)
+except ImportError:
+    pass
