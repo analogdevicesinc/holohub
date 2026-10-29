@@ -1,0 +1,30 @@
+# CMake build artifacts
+build/
+.cmake/
+
+# `holoscan test` build trees and `holoscan package` outputs
+build-*/
+_CPack_Packages/
+*.deb
+
+# Caller-owned Python environments
+.venv/
+
+# Container HOME-mapped junk (dev container sets HOME=/workspace/iio_controller)
+.local/
+.cupy/
+.cache/
+.bash_history
+.python_history
+.ngc/
+.nv/
+
+# Packaging artifacts and helper-script caches
+dist/
+__pycache__/
+*.py[cod]
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp

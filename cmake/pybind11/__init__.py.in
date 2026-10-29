@@ -1,0 +1,5 @@
+import holoscan.core
+import holoscan.gxf
+
+from ._@MODULE_NAME@ import @MODULE_CLASS_NAME@
+_register_types = getattr(_@MODULE_NAME@, \"register_types\", None) if False else None

@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Development tooling only. Holoscan SDK 5.0 Modules are C++ libraries shipped
+# as Debian packages; the CMake build adds the Python bindings, and wheel
+# packaging returns in a later release. This file pins the Holoscan CLI for
+# `uv run holoscan ...` and configures ruff for the repository's helper scripts.
+
+[project]
+name = "holoscan-iio-controller"
+version = "0.1.0"
+description = "A Holoscan Module extending the Holoscan SDK."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Your Name" },
+]
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "holoscan-cli==5.0.0",
+    "ruff",
+    "pytest",
+]
+
+[tool.uv]
+# Not an installable Python package; `uv sync` only provisions the dev tools.
+package = false
+
+[tool.uv.sources]
+holoscan-cli = { index = "nvidia" }
+
+[[tool.uv.index]]
+name = "nvidia"
+url = "https://pypi.nvidia.com"
+explicit = true
+
+[tool.holoscan]
+# Module-wide defaults for `holoscan build|run|test|run-container`. See DEVELOPER.md
+# for the full list of supported keys. Keep the CUDA major and base images in step
+# with the Dockerfile's default BASE_IMAGE.
+cuda = 13
+# ctest-script = "ci/container.ctest"
+# forward-env = ["IS_CI_BUILD"]
+# docker-build-args = ["--build-arg", "PROJECT_FEATURE=ON"]
+# docker-run-args = ["--network=host"]
+
+[tool.holoscan.base-images]
+x86_64 = "nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13"
+aarch64 = "nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# build*/, dist/ are CMake/packaging outputs; .local/, .cache/, .cupy/ are
+# dev-container HOME junk.
+exclude = [
+    "build*",
+    "dist",
+    ".cache",
+    ".local",
+    ".cupy",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = ["E501", "UP007"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["holoscan"]

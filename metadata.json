@@ -1,0 +1,45 @@
+{
+  "$schema": "urn:holoscan:module:v2",
+  "module": {
+    "name": "holoscan-iio-controller",
+    "version": "1.0.0",
+    "support_level": "community",
+    "description": "IIO Controller operators for Analog Devices SDR hardware (ADALM-Pluto) via libiio v0/v1",
+    "authors": [
+      {
+        "name": "Andrei-Fabian Pop",
+        "affiliation": "Analog Devices Inc."
+      },
+      {
+        "name": "Marius Lucacel",
+        "affiliation": "Analog Devices Inc."
+      }
+    ],
+    "license": "Apache-2.0",
+    "language": ["C++", "Python"],
+    "namespace": {
+      "cpp": "holoscan::ops",
+      "python": "holoscan.iio_controller"
+    },
+    "holoscan_sdk": {
+      "minimum_required_version": "4.6.0",
+      "tested_versions": ["4.6.0"]
+    },
+    "platforms": ["x86_64"],
+    "tags": ["Signal Processing", "iio", "libiio", "SDR"],
+    "source_repository": "https://github.com/analogdevicesinc/holohub",
+    "operator_names": ["IIOAttributeRead", "IIOAttributeWrite", "IIOBufferRead", "IIOBufferWrite", "IIOConfigurator"],
+    "dependencies": [],
+    "dockerfile": "Dockerfile",
+    "binary_packages": {
+      "debian": "holoscan-iio-controller",
+      "install_commands": ["sudo apt install ./holoscan-iio-controller_1.0.0_$(dpkg --print-architecture).deb"]
+    },
+    "documentation": {
+      "readme": "README.md"
+    },
+    "testing": {
+      "cpp": "ctest"
+    }
+  }
+}
