@@ -76,7 +76,7 @@ inline iio_channel_info_t create_channel_info_from_iio_channel(holoscan::ops::II
   info.name = api.channel_id(channel);
   info.is_output = api.channel_is_output(channel);
 
-  long idx = api.channel_index(channel);
+  int64_t idx = api.channel_index(channel);
   info.index = (idx >= 0) ? static_cast<unsigned int>(idx) : 0;
 
   info.format = api.channel_format(channel);

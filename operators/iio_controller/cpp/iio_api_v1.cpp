@@ -82,7 +82,7 @@ class IIOApiV1 : public IIOApi {
 
   bool channel_is_output(const iio_channel* chn) override { return iio_channel_is_output(chn); }
 
-  long channel_index(const iio_channel* chn) override { return iio_channel_get_index(chn); }
+  int64_t channel_index(const iio_channel* chn) override { return iio_channel_get_index(chn); }
 
   IIODataFormat channel_format(const iio_channel* chn) override {
     const iio_data_format* fmt = iio_channel_get_data_format(chn);

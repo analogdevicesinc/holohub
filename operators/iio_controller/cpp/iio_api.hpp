@@ -19,6 +19,7 @@
 
 #include <sys/types.h>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -61,7 +62,7 @@ class IIOApi {
   virtual std::string device_name(const iio_device* dev) = 0;
   virtual std::string channel_id(const iio_channel* chn) = 0;
   virtual bool channel_is_output(const iio_channel* chn) = 0;
-  virtual long channel_index(const iio_channel* chn) = 0;
+  virtual int64_t channel_index(const iio_channel* chn) = 0;
   virtual IIODataFormat channel_format(const iio_channel* chn) = 0;
   virtual void convert(const iio_channel* chn, void* dst, const void* src) = 0;
   virtual void convert_inverse(const iio_channel* chn, void* dst, const void* src) = 0;
