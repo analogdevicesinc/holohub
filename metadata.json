@@ -31,15 +31,11 @@
     "operator_names": ["IIOAttributeRead", "IIOAttributeWrite", "IIOBufferRead", "IIOBufferWrite", "IIOConfigurator"],
     "dependencies": [],
     "dockerfile": "Dockerfile",
-    "binary_packages": {
-      "debian": "holoscan-iio-controller",
-      "install_commands": ["sudo apt install ./holoscan-iio-controller_1.0.0_$(dpkg --print-architecture).deb"]
-    },
     "documentation": {
       "readme": "README.md"
     },
     "testing": {
-      "cpp": "ctest"
+      "python": "pytest"
     }
   }
 }
