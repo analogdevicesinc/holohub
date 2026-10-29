@@ -18,9 +18,9 @@ import os
 import struct
 
 import iio
+
 from holoscan.conditions import CountCondition
 from holoscan.core import Application, Operator, OperatorSpec
-
 from holoscan.iio_controller import (
     IIOAttributeRead,
     IIOAttributeWrite,

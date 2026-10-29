@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 # Run `pre-commit install` once, then hooks run on every commit.
@@ -43,15 +43,19 @@ repos:
     rev: 2.0.2
     hooks:
       - id: cpplint
-        # Line width is owned by clang-format (ColumnLimit 100); TODO markers in
-        # the generated stubs intentionally omit a username.
+        # Matches analogdevicesinc/holohub's own CPPLINT.cfg filter, so this
+        # module's style stays consistent with the rest of the ecosystem
+        # instead of cpplint's stricter stock defaults. Line width is owned
+        # by clang-format (ColumnLimit 100), set explicitly below rather than
+        # via the filter, same as upstream's CPPLINT.cfg linelength=100.
         # NOTE: keep the comma-separated --filter value on one block-list line.
         # In flow style ([a, b]) YAML splits on the comma, turning the second
         # category into a stray "-whitespace/line_length" arg that cpplint
         # rejects with a usage error.
         args:
           - --quiet
-          - --filter=-readability/todo,-whitespace/line_length
+          - --linelength=100
+          - --filter=-build/header_guard,-readability/todo,-runtime/references,-build/c++11,-build/c++17,-runtime/int,-build/include_subdir,-build/namespaces,-readability/casting,-build/include,-runtime/threadsafe_fn,-whitespace/newline,-whitespace/indent_namespace,-readability/nolint
 
   # Markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -69,7 +73,7 @@ repos:
         # stay separate from the Module's lightweight CLI environment.
         entry: python .github/workflows/scripts/validate_metadata.py
         language: python
-        additional_dependencies: ["holoscan-cli[create]==5.0.0"]
+        additional_dependencies: ["holoscan-cli[create]==4.6.0"]
         files: '(^|/)metadata\.json$'
         pass_filenames: false
 
