@@ -1,142 +1,95 @@
-# iio-controller
+# Holoscan IIO Controller
 
-A Holoscan Module extending the Holoscan SDK.
+A Holoscan Module for interfacing with Industrial I/O (IIO) devices — software-defined
+radios (SDRs) like the ADALM-Pluto, data acquisition systems, and sensors exposed through the
+Linux IIO subsystem.
 
-A **Holoscan Module** — a self-contained, redistributable library that extends
-[Holoscan SDK](https://developer.nvidia.com/holoscan-sdk) 5.0 with reusable operators under the
-`holoscan::iio_controller` namespace.
-
-> Holoscan SDK 5.0 is C++-first. This Module ships C++ operators plus Python bindings that expose
-> them through the SDK operator registry (`import holoscan_iio_controller`). Wheel packaging returns in a
-> later release.
+Supports both **libiio v0** (the legacy, string-based API) and **libiio v1** (the current,
+object-based API) through a single interface, with the correct backend selected automatically
+at build time via `pkg-config` — no code changes needed to switch between them.
 
 ---
 
 ## Quick Start
 
-Create and activate a standard Python virtual environment, then install the exact CLI version
-pinned by this Module:
+If libiio is installed normally (system package manager, or a plain source install with no
+custom prefix), it's already on `pkg-config`'s default search path — nothing extra is needed:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install \
-  --extra-index-url https://pypi.nvidia.com \
-  -r requirements-cli.txt
-
-# Build and run the C++ demo application inside the development container
-holoscan run iio_controller_pipeline --language cpp
-
-# Or run the Python example, which calls the C++ operator through the bindings
-holoscan run iio_controller_pipeline --language python
+holoscan build iio --local
+holoscan run iio --local
 ```
 
-If you use [uv](https://docs.astral.sh/uv/), no separate environment setup or activation is
-needed. Prefix the same commands with `uv run`, for example:
+If you have multiple libiio versions installed side-by-side and need to select a specific one,
+point `pkg-config` at it explicitly:
 
 ```bash
-uv run holoscan run iio_controller_pipeline --language cpp
+PKG_CONFIG_PATH=/path/to/libiio-v0-or-v1/lib/pkgconfig holoscan build iio --local
 ```
 
-The project configuration installs the development tools without building the Module on the host.
+For Python:
 
----
-
-## Operators
-
-| Operator | Implementation | Ports | Parameters |
-| --- | --- | --- | --- |
-| `IioControllerOp` | C++ | `in` → `out` (TODO) | TODO |
-
-### Namespace
-
-- C++: `holoscan::iio_controller`
-
----
-
-## Usage
-
-Holoscan SDK 5.0 applications follow three phases: **compose** a `holoscan::Graph`, **compile**
-it into an `ExecutionPlan`, then **run** the plan. Structural mistakes (unknown ports, type
-mismatches, missing clocks) are reported as diagnostics at compile time, before anything runs.
-
-```cpp
-#include <iostream>
-
-#include <holoscan/core/compile.hpp>
-#include <holoscan/core/graph.hpp>
-#include <holoscan/core/run.hpp>
-#include <holoscan/time/realtime_clock.hpp>
-
-#include <iio_controller_op/iio_controller_op.hpp>
-
-int main() {
-  holoscan::Graph graph{"my-pipeline"};
-  const auto op = graph.op<holoscan::iio_controller::IioControllerOp>("iio_controller_op");
-  // TODO: add your source/sink operators and connect typed ports:
-  // graph.add_flow(source->out, op->in);
-  // graph.add_flow(op->out, sink->in);
-  graph.set_default_clock(graph.add_clock<holoscan::RealtimeClock>("clock"));
-
-  const holoscan::ExecutionPlan plan = holoscan::compile(graph);
-  if (!plan.ok()) {
-    std::cerr << plan.json() << '\n';
-    return 1;
-  }
-  return holoscan::run(plan);
-}
+```bash
+holoscan run iio --local --language python
 ```
 
-See `applications/iio_controller_pipeline/cpp/` for a complete example that owns
-its own termination with `holoscan::run_async`.
-
 ---
 
-## Building from Source (without Holoscan CLI)
+## What's Included
 
-| Requirement | Version |
+| Operator | Purpose |
 | --- | --- |
-| Holoscan SDK | ≥ 5.0.0 (`apt install holoscan`, the `holoscan-cuda-13` alias) |
-| CUDA Toolkit | 13.x (matches the Holoscan SDK CUDA pin; the dev `Dockerfile` uses `cuda13`) |
-| CMake | ≥ 4.0 |
-| C++ compiler | C++20-capable |
-| GoogleTest | any recent release (tests only) |
-| Python | 3.12+ with development headers (Python bindings) |
-| Holoscan SDK Python package | importable as `holoscan` (Python bindings and tests) |
-| nanobind | 3.0.1 (CMake fetches it from GitHub when it is not installed) |
-| pytest | any recent release (Python tests only) |
+| `IIOAttributeRead` | Read a single device/channel/context attribute |
+| `IIOAttributeWrite` | Write a single device/channel/context attribute |
+| `IIOBufferRead` | Stream samples from a device's RX buffer |
+| `IIOBufferWrite` | Stream samples to a device's TX buffer |
+| `IIOConfigurator` | Apply a full device configuration from a YAML file |
 
-```bash
-cmake -S . -B build -DBUILD_ALL=ON -DIIO_CONTROLLER_BUILD_TESTING=ON
-cmake --build build -j$(nproc)
-```
+Full parameter reference, port types, and usage examples for each operator:
+[`operators/iio_controller/README.md`](operators/iio_controller/README.md).
 
-The module's `IIO_CONTROLLER_BUILD_TESTING` option defaults to `ON` in a
-standalone build. For a build without tests, set `-DIIO_CONTROLLER_BUILD_TESTING:BOOL=OFF`
-when configuring. The standard `-DBUILD_TESTING=OFF` does not control this module's tests.
-Without an installed GoogleTest, CMake downloads it while configuring the tests.
+**Example application** — `applications/iio/`: a `basic_example` (attribute and buffer
+read/write demos) and a `pluto_fft_example` (transmit → receive via loopback → FFT → real-time
+spectrum plot), both in C++ and Python.
+
+---
+
+## Requirements
+
+- **libiio** ≥ 0.26 (v0) or any v1.x release — auto-detected via `pkg-config`
+- **Holoscan SDK** ≥ 4.6.0
+- An IIO-capable device for real use (tested against the ADALM-Pluto SDR); attribute-only
+  operators can be exercised against any reachable IIO context
 
 ---
 
 ## Testing
 
 ```bash
-holoscan test
+cd build/iio
+ctest --output-on-failure
 ```
 
-Or, without the Holoscan CLI:
+(`holoscan test`'s default container-driver flow expects a shared CTest script this standalone
+module doesn't carry; running `ctest` directly against an already-built `build/iio` works and is
+what the commands above assume.)
 
-```bash
-ctest --test-dir build --output-on-failure -L unit
-```
+The test suite (`operators/iio_controller/python/tests/`) covers Python import correctness and
+operator construction with real parameter names — it doesn't require hardware, since none of it
+calls `initialize()`.
 
-The generated GTest suite (`tests/cpp/test_operators.cpp`) covers two layers recommended by the
-Holoscan SDK 5.0 testing guide: a compile-plan test that asserts the graph is accepted, and a
-whole-graph test driven by a `holoscan::SyntheticClock` so it runs deterministically without
-hardware. Extend the test doubles and assertions as your operator grows.
+---
+
+## A Note on `simple_fft`
+
+`applications/iio/cpp/pluto_fft_example/simple_fft.{hpp,cu}` is a minimal FFT operator derived
+from [`nvidia-holoscan/holohub`'s `operators/fft`](https://github.com/nvidia-holoscan/holohub/tree/main/operators/fft)
+(© Voyager Technologies, Inc., Apache-2.0), with the VITA 49.2 metadata-passthrough parameters
+removed since this example doesn't use them. See the file headers for the full attribution.
 
 ---
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE). Third-party software is listed in [NOTICE](NOTICE).
+Apache-2.0 — see [LICENSE](LICENSE). Third-party attributions are listed in [NOTICE](NOTICE)
+and in the headers of individual files where applicable.
