@@ -1,86 +1,89 @@
 # AGENTS.md
 
-Guidance for AI agents working on iio-controller, a Holoscan Module for Holoscan
-SDK 5.0.0 or later. [README.md](README.md) covers setup and usage, and
-[DEVELOPER.md](DEVELOPER.md) covers the layout, build options, and metadata.
+Guidance for AI agents working on `holoscan-iio-controller`, a Holoscan Module for
+Holoscan SDK >= 4.6.0. [README.md](README.md) covers setup and usage, and
+[DEVELOPER.md](DEVELOPER.md) covers the layout and build/test commands.
 
-## Holoscan SDK 5
+## Operator API
 
-- This Module's operators are C++ and ship as a Debian package. `python/` exposes them to
-  Python through the SDK operator registry; there are no operators implemented in Python and no wheel.
-- Holoscan SDK 5 changed the operator and application APIs, and most published Holoscan examples still use
-  the 4.x API. Follow the code in this repository and the API cheat sheet in DEVELOPER.md:
-  - Operators derive from `holoscan::Operator<>` (or `holoscan::Operator<ParamsStruct>`), declare
-    `holoscan::Input<T>` and `holoscan::Output<T>` members, and bind them in `setup()`.
-  - `compute(holoscan::ExecutionContext&)` returns `holoscan::expected<void, holoscan::Error>`.
-  - Applications build a `holoscan::Graph` with `graph.op<Op>(...)` and
-    `graph.add_flow(a->out, b->in)`, call `holoscan::compile()`, check `plan.ok()`, and then call
-    `holoscan::run()` or `holoscan::run_async()`. Print `plan.json()` to see why a graph failed to
-    compile.
-  - An operator with no inputs needs a contract such as `OnClock`, and the graph needs a default
-    clock.
-- The example application stops after a fixed number of results. Keep it finite.
-- The tests run the graph on a `SyntheticClock`. Advancing the clock does not wait for the work to
-  finish, so wait for each expected result and stop the run on every exit path.
+This module uses the operator API available since Holoscan SDK 3.x, **not** the
+typed-port API introduced in SDK 5.0:
+
+- Operators derive from `holoscan::Operator`, declare `Parameter<T>` members, and
+  bind them in `setup(OperatorSpec&)`.
+- `compute(InputContext&, OutputContext&, ExecutionContext&)` returns `void`.
+- Applications wire operators together via `Application::compose()` and
+  `make_operator<Op>(...)`/`add_flow(...)`.
+
+Migrating to the SDK 5.0 typed-port API is a deliberate, separate future effort,
+not something to do incrementally alongside unrelated changes -- it touches every
+operator's public shape. See DEVELOPER.md for why.
 
 ## Commands
 
-Install the CLI version pinned in `requirements-cli.txt` (see README.md), or prefix commands with
-`uv run`. Build, run, test, and package commands run in the development container unless you pass
-`--local`.
-
 | Task | Command |
 | --- | --- |
-| Build the example | `holoscan build iio_controller_pipeline --language cpp` |
-| Run the example | `holoscan run iio_controller_pipeline --language cpp` |
-| Run the Python example | `holoscan run iio_controller_pipeline --language python` |
-| Run the tests | `holoscan test` |
-| Lint | `holoscan lint` |
-| Build the Debian package | `holoscan package holoscan-iio-controller --pkg-generator DEB` |
-| List projects and check the host | `holoscan list --json`, `holoscan env-check --json` |
+| Build the example (C++) | `holoscan build iio --local --language cpp` |
+| Build the example (Python) | `holoscan build iio --local --language python` |
+| Run the example | `holoscan run iio --local` |
+| Run the tests | `cd build/iio && ctest --output-on-failure` |
+| Lint | `holoscan lint` (`--install-dependencies` first time) |
+| List projects / check host | `holoscan list --json`, `holoscan env-check --json` |
 
-- `holoscan lint` runs the hooks in `.pre-commit-config.yaml` and fixes some files in place; review
-  those changes. If pre-commit is missing, `holoscan lint --install-dependencies` installs it into
-  the active environment.
-- Without a GPU, add `--docker-opts="--runtime=runc"` to container commands so Docker does not use
-  the NVIDIA runtime. `holoscan env-check` reports the missing GPU as a failed check.
-- With a compatible SDK on the host, add `--local` and set
-  `HOLOSCAN_CLI_BUILD_PARENT_DIR="$PWD/build-native"` so native output stays apart from container
-  output. Select the SDK with `--local-sdk-root` or `HOLOSCAN_SDK_ROOT`.
-- To build without the CLI, use the CMake commands in DEVELOPER.md.
+- `holoscan test`'s default flow expects a shared CTest driver script this
+  standalone module doesn't carry (`utilities/testing/holohub.container.ctest`,
+  only present in the full HoloHub monorepo). Run `ctest` directly against
+  `build/iio` instead, as shown above.
+- libiio (v0 or v1) is required and is **not** bundled -- build it from source
+  yourself (<https://github.com/analogdevicesinc/libiio>) and, if you have more
+  than one version installed, select one explicitly:
+  `PKG_CONFIG_PATH=/path/to/libiio-vX/lib/pkgconfig holoscan build iio --local`.
+  CMake caches the pkg-config result -- wipe `build/` before switching versions.
+- Python additionally needs `pylibiio` (the real libiio Python bindings, separate
+  from this module's own pybind11 bindings) on `PYTHONPATH`, and `libiio.so` on
+  `LD_LIBRARY_PATH` if it isn't in a standard location. `pylibiio` hard-requires
+  libiio v1.
 
-A change is done when `holoscan lint`, the build, and `holoscan test` pass.
+A change is done when `holoscan lint` and the build/test commands above pass.
 
 ## Files that change together
 
-- CLI version: `requirements-cli.txt`, `pyproject.toml`, and `.pre-commit-config.yaml`.
-- Module version: `CMakeLists.txt`, `pyproject.toml`, and the Module, operator, and application
-  `metadata.json` files.
-- SDK version and image: `Dockerfile`, `pyproject.toml`, `.github/workflows/ci.yml`, the Module,
-  operator, and application `metadata.json` files, and
-  `pkg/holoscan-iio-controller/CMakeLists.txt`.
-- Operator ports or parameters: the operator's `metadata.json`, the tests, and the operator table in
-  README.md.
-- Operator languages: the operator's `metadata.json` and `module.language` in the root
-  `metadata.json`.
-- Third-party dependencies: `NOTICE`, which lists each one with its version and license.
+- CLI version: `requirements-cli.txt` and `pyproject.toml`.
+- Module version: `CMakeLists.txt`, `pyproject.toml`, and the module's and
+  operator's `metadata.json` files.
+- SDK version and base image: `Dockerfile`, `pyproject.toml`
+  (`[tool.holoscan.base-images]`), and the module's `metadata.json`
+  (`holoscan_sdk.minimum_required_version`).
+- Operator ports or parameters: the operator's own code, the operator table in
+  `operators/iio_controller/README.md`, and the Python test suite
+  (`operators/iio_controller/python/tests/`).
+- Third-party dependencies: `NOTICE`, which lists each one with its version and
+  license, including attribution for derived files (see `simple_fft.{hpp,cu}`).
 
-`cmake/` holds CMake helpers that `holoscan create` copied from the CLI. They belong to this Module,
-and you can edit them. Upgrading the CLI does not update them; update them by hand if needed.
+`cmake/` holds CMake helpers that `holoscan create` copied from the CLI at
+scaffold time. They belong to this module, and you can edit them. Upgrading the
+CLI does not update them; update them by hand if needed.
 
 ## Boundaries
 
-- **Always** preview commands that build, run, test, or package with `--dryrun --verbose`, using the
-  options you intend to run. Read-only commands (`version`, `list`, `modes`, `env-info`,
-  `env-check`, `status`) need no preview.
-- **Always** run `holoscan lint` and `holoscan test` before committing.
-- **Always** sign off commits with `git commit -s` (Developer Certificate of Origin).
-- **Ask first** before changing the SDK version, base images, or CLI pin, and before renaming the
-  Module, its namespace, package, or operators.
-- **Ask first** before running anything that needs `sudo` or changes the host, such as `apt` or
-  installing the Debian package.
-- Register every new operator in `python/_iio_controller.cpp` and cover it in `tests/python`.
-- **Never** add Python-implemented operators or wheel packaging.
-- **Never** store secrets or machine-specific paths in `pyproject.toml` or `metadata.json`.
-- **Never** pin a dependency on another Module to a tag or branch; use a full commit SHA.
-- **Never** delete `build/`, `build-native/`, or `install/` directories without asking.
+- **Always** preview commands that build, run, test, or package with
+  `--dryrun --verbose`, using the options you intend to run. Read-only commands
+  (`version`, `list`, `modes`, `env-info`, `env-check`, `status`) need no preview.
+- **Always** run `holoscan lint` before committing.
+- **Always** sign off commits with `git commit -s` (Developer Certificate of
+  Origin).
+- **Ask first** before changing the SDK version, base images, or CLI pin, and
+  before renaming the module, its namespace, or its operators.
+- **Ask first** before running anything that needs `sudo` or changes the host,
+  such as `apt install`.
+- **Ask first** before editing anything under `operators/iio_controller/cpp/`
+  or `operators/iio_controller/python/iio_controller_py.cpp` -- this is the
+  module's core implementation.
+- Register every new operator's Python bindings in
+  `operators/iio_controller/python/iio_controller_py.cpp` and cover it in
+  `operators/iio_controller/python/tests/`.
+- **Never** store secrets or machine-specific paths in `pyproject.toml` or
+  `metadata.json`.
+- **Never** pin a dependency on another module to a tag or branch; use a full
+  commit SHA.
+- **Never** delete `build/` or `install/` directories without asking.

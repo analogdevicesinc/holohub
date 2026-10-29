@@ -1,13 +1,13 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 Your Name / Your Organization. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [iio-controller-module]
   pull_request:
-    branches: [main]
+    branches: [iio-controller-module]
 
 jobs:
   lint:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
       - run: pip install ruff
       - name: Python lint
         run: ruff check .
@@ -31,56 +31,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: C++ format check
         run: |
-          find operators applications tests python \
-               -name '*.cpp' -o -name '*.hpp' \
+          find operators applications \
+               -name '*.cpp' -o -name '*.hpp' -o -name '*.cu' \
             | xargs clang-format --dry-run --Werror
 
-  build-only:
-    name: CMake configure (Holoscan 5.0.0 container, no GPU required)
-    # Verifies the CMake graph without a GPU runner. The Holoscan SDK 5.0 C++
-    # headers and CMake package are taken from the SDK container image.
-    runs-on: ubuntu-latest
-    container:
-      image: nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13
-    steps:
-      - uses: actions/checkout@v4
-      - name: CMake configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DIIO_CONTROLLER_BUILD_TESTING=OFF \
-            -DBUILD_ALL=ON
-
-  build-and-test:
-    name: Build and Test (Holoscan 5.0.0)
-    # Requires a self-hosted GPU runner and the Holoscan container image.
-    # To set up a self-hosted runner see:
-    #   https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners
-    # TODO: update the runner label and container image for your CI environment.
-    runs-on: [self-hosted, linux, x86_64, gpu]
-
-    container:
-      image: nvcr.io/nvidia/clara-holoscan/holoscan:v5.0.0-cuda13
-      options: --gpus all
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DIIO_CONTROLLER_BUILD_TESTING=ON \
-            -DBUILD_ALL=ON
-
-      - name: Build
-        run: cmake --build build -j"$(nproc)"
-
-      - name: C++ tests (CTest)
-        run: ctest --test-dir build --output-on-failure -L unit
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: build/Testing/
+# TODO: add a build-and-test job.
