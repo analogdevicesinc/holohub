@@ -23,8 +23,7 @@
 		"ranking": 3,
 		"requirements": {
 			"operators": [
-				"iio_controller",
-				"fft"
+				"iio_controller"
 			],
 			"libraries": [{
 				"name": "libiio",

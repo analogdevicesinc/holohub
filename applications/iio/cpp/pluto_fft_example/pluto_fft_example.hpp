@@ -25,7 +25,7 @@
 #include <holoscan/core/operator.hpp>
 #include "holoscan/holoscan.hpp"
 
-#include "fft.hpp"
+#include "simple_fft.hpp"
 #include "iio_buffer_read.hpp"
 #include "iio_buffer_write.hpp"
 #include "iio_configurator.hpp"
@@ -48,11 +48,7 @@ class PlutoFFTExample : public holoscan::Application {
     const int adc_bits = 12;                   // Pluto SDR ADC resolution
 
     // Derived parameters
-    const size_t samples_per_channel = fft_size;                    // Number of I/Q pairs
-    const size_t frequency_resolution = sample_rate_hz / fft_size;  // 1875 Hz
-
-    // Window type: 2 = Hann (realtime mode prefers better sidelobes)
-    const uint8_t window_type = 2;
+    const size_t samples_per_channel = fft_size;  // Number of I/Q pairs
 
     std::vector<std::string> enabled_channels_names = {"voltage0", "voltage1"};
     std::vector<bool> enabled_channels_output = {false, false};  // False for input channels
@@ -132,22 +128,9 @@ class PlutoFFTExample : public holoscan::Application {
 
     // FFT operator - performs FFT on the CUDA tensor
     auto fft_op =
-        make_operator<ops::FFT>("fft",
+        make_operator<ops::SimpleFFT>("fft",
                                 Arg("burst_size") = static_cast<int>(fft_size),
-                                Arg("num_bursts") = 1,
-                                Arg("num_channels") = static_cast<uint16_t>(1),
-                                Arg("spectrum_type") = static_cast<uint8_t>(0),
-                                Arg("averaging_type") = static_cast<uint8_t>(0),
-                                Arg("window_time") = static_cast<uint8_t>(0),
-                                Arg("window_type") = window_type,
-                                Arg("transform_points") = static_cast<uint32_t>(fft_size),
-                                Arg("window_points") = static_cast<uint32_t>(fft_size),
-                                Arg("resolution") = static_cast<uint64_t>(frequency_resolution),
-                                Arg("span") = static_cast<uint64_t>(sample_rate_hz),
-                                Arg("weighting_factor") = 1.0f,
-                                Arg("f1_index") = static_cast<int32_t>(0),
-                                Arg("f2_index") = static_cast<int32_t>(fft_size - 1),
-                                Arg("window_time_delta") = static_cast<uint32_t>(1000));
+                                Arg("num_bursts") = 1);
 
     // Define common flows for dynamic routing from start operator
     add_flow(start_router_op, iio_configurator_op);

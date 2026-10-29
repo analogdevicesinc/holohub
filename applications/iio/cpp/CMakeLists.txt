@@ -31,10 +31,11 @@ find_package(
 find_package(matx CONFIG REQUIRED)
 
 add_executable(iio main.cpp pluto_fft_example/pluto_fft_example.hpp
-                   pluto_fft_example/support_operators.hpp)
+                   pluto_fft_example/support_operators.hpp
+                   pluto_fft_example/simple_fft.cu pluto_fft_example/simple_fft.hpp)
 
 target_link_libraries(
-  iio PRIVATE holoscan::core iio_controller holoscan::ops::fft matx::matx
+  iio PRIVATE holoscan::core iio_controller matx::matx
               iio_basic_example)
 
 # Copy config file
