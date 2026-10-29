@@ -17,21 +17,20 @@
 
 #pragma once
 
+#include <filesystem>
 #include <holoscan/core/application.hpp>
 #include <holoscan/core/conditions/gxf/boolean.hpp>
 #include <holoscan/core/conditions/gxf/count.hpp>
 #include <holoscan/core/endpoint.hpp>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
-#include "holoscan/holoscan.hpp"
 
-#include "simple_fft.hpp"
+#include "holoscan/holoscan.hpp"
 #include "iio_buffer_read.hpp"
 #include "iio_buffer_write.hpp"
 #include "iio_configurator.hpp"
+#include "simple_fft.hpp"
 #include "support_operators.hpp"
-
-#include <filesystem>
 
 using namespace holoscan;
 
@@ -59,10 +58,9 @@ class PlutoFFTExample : public holoscan::Application {
 
     // Configuration path
     auto config_file_path = std::filesystem::path(__FILE__).parent_path() / "pluto_fft_config.yaml";
-    auto iio_configurator_op =
-        make_operator<ops::IIOConfigurator>("iio_configurator",
-                                            Arg("cfg") = config_file_path.string(),
-                                            make_condition<CountCondition>("config_count", 1));
+    auto iio_configurator_op = make_operator<ops::IIOConfigurator>(
+        "iio_configurator", Arg("cfg") = config_file_path.string(),
+        make_condition<CountCondition>("config_count", 1));
 
     // Binary file reader - reads data from a binary file
     auto binary_file_path = std::filesystem::path(__FILE__).parent_path() / "sample_data.bin";
@@ -70,48 +68,40 @@ class PlutoFFTExample : public holoscan::Application {
     if (realtime_) {
       // For realtime mode, don't limit the count
       binary_reader_op = make_operator<ops::BinaryFileReaderOp>(
-          "binary_reader",
-          Arg("file_path") = binary_file_path.string(),
+          "binary_reader", Arg("file_path") = binary_file_path.string(),
           Arg("device_name") = std::string("cf-ad9361-dds-core-lpc"),
           Arg("channel_names") = enabled_channels_names,
           Arg("channel_outputs") =
               std::vector<bool>{false, false},  // Input channels (voltage0, voltage1)
-          Arg("samples_per_channel") = samples_per_channel,
-          Arg("is_cyclic") = true,
+          Arg("samples_per_channel") = samples_per_channel, Arg("is_cyclic") = true,
           Arg("sample_size_bytes") = static_cast<size_t>(2));
     } else {
       // For single-shot mode, run only once
       binary_reader_op = make_operator<ops::BinaryFileReaderOp>(
-          "binary_reader",
-          Arg("file_path") = binary_file_path.string(),
+          "binary_reader", Arg("file_path") = binary_file_path.string(),
           Arg("device_name") = std::string("cf-ad9361-dds-core-lpc"),
           Arg("channel_names") = enabled_channels_names,
           Arg("channel_outputs") =
               std::vector<bool>{false, false},  // Input channels (voltage0, voltage1)
-          Arg("samples_per_channel") = samples_per_channel,
-          Arg("is_cyclic") = true,
+          Arg("samples_per_channel") = samples_per_channel, Arg("is_cyclic") = true,
           Arg("sample_size_bytes") = static_cast<size_t>(2),
           make_condition<CountCondition>("binary_count", 1));
     }
 
     // IIOBufferWrite operator - writes data to Pluto SDR
     auto iio_buf_write_op = make_operator<ops::IIOBufferWrite>(
-        "iio_buffer_write",
-        Arg("ctx") = std::string(G_URI),
-        Arg("dev") = std::string("cf-ad9361-dds-core-lpc"),
-        Arg("is_cyclic") = true,
+        "iio_buffer_write", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("cf-ad9361-dds-core-lpc"), Arg("is_cyclic") = true,
         Arg("enabled_channel_names") = enabled_channels_names,
         Arg("enabled_channel_output") = std::vector<bool>{true, true});  // Output channels
 
     // IIOBufferRead operator - reads data from Pluto SDR
-    auto iio_buf_read_op =
-        make_operator<ops::IIOBufferRead>("iio_buffer_read",
-                                          Arg("ctx") = std::string(G_URI),
-                                          Arg("dev") = std::string("cf-ad9361-lpc"),
-                                          Arg("is_cyclic") = true,
-                                          Arg("samples_count") = samples_per_channel,
-                                          Arg("enabled_channel_names") = enabled_channels_names,
-                                          Arg("enabled_channel_output") = enabled_channels_output);
+    auto iio_buf_read_op = make_operator<ops::IIOBufferRead>(
+        "iio_buffer_read", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("cf-ad9361-lpc"), Arg("is_cyclic") = true,
+        Arg("samples_count") = samples_per_channel,
+        Arg("enabled_channel_names") = enabled_channels_names,
+        Arg("enabled_channel_output") = enabled_channels_output);
 
     // IIOChannelConvertOp - skip conversion for binary file data
     auto iio_convert_op =
@@ -119,37 +109,32 @@ class PlutoFFTExample : public holoscan::Application {
 
     // IIOBuffer2CudaTensorOp - converts IIO buffer to CUDA tensor
     auto buffer_to_tensor_op = make_operator<ops::IIOBuffer2CudaTensorOp>(
-        "buffer_to_tensor",
-        Arg("num_channels") = static_cast<unsigned int>(num_channels),
+        "buffer_to_tensor", Arg("num_channels") = static_cast<unsigned int>(num_channels),
         Arg("samples_per_channel") = samples_per_channel,
-        Arg("burst_size") = static_cast<int>(fft_size),
-        Arg("num_bursts") = 1,
+        Arg("burst_size") = static_cast<int>(fft_size), Arg("num_bursts") = 1,
         Arg("adc_bits") = adc_bits);
 
     // FFT operator - performs FFT on the CUDA tensor
-    auto fft_op =
-        make_operator<ops::SimpleFFT>("fft",
-                                Arg("burst_size") = static_cast<int>(fft_size),
-                                Arg("num_bursts") = 1);
+    auto fft_op = make_operator<ops::SimpleFFT>(
+        "fft", Arg("burst_size") = static_cast<int>(fft_size), Arg("num_bursts") = 1);
 
     // Define common flows for dynamic routing from start operator
     add_flow(start_router_op, iio_configurator_op);
     add_flow(start_router_op, binary_reader_op);
 
     // Set dynamic flow control on the start operator
-    set_dynamic_flows(start_router_op,
-                      [iio_configurator_op, binary_reader_op, this](
-                          const std::shared_ptr<holoscan::Operator>& op) mutable {
-                        static bool config_done = false;
-                        if (!config_done) {
-                          HOLOSCAN_LOG_INFO("First run - routing to IIO configurator");
-                          op->add_dynamic_flow(iio_configurator_op);
-                          config_done = true;
-                        } else {
-                          HOLOSCAN_LOG_DEBUG("Configuration done - routing to binary file reader");
-                          op->add_dynamic_flow(binary_reader_op);
-                        }
-                      });
+    set_dynamic_flows(start_router_op, [iio_configurator_op, binary_reader_op, this](
+                                           const std::shared_ptr<holoscan::Operator>& op) mutable {
+      static bool config_done = false;
+      if (!config_done) {
+        HOLOSCAN_LOG_INFO("First run - routing to IIO configurator");
+        op->add_dynamic_flow(iio_configurator_op);
+        config_done = true;
+      } else {
+        HOLOSCAN_LOG_DEBUG("Configuration done - routing to binary file reader");
+        op->add_dynamic_flow(binary_reader_op);
+      }
+    });
 
     // Common data flow chain: binary_reader -> processing (bypass write/read cycle)
     add_flow(binary_reader_op, iio_convert_op, {{"buffer", "buffer_in"}});
@@ -160,21 +145,17 @@ class PlutoFFTExample : public holoscan::Application {
     if (realtime_) {
       // FFTGnuplotRealtimeOp - real-time plotting with gnuplot
       auto fft_gnuplot_realtime_op = make_operator<ops::FFTGnuplotRealtimeOp>(
-          "fft_gnuplot_realtime",
-          Arg("max_frequency") = static_cast<float>(sample_rate_hz),
+          "fft_gnuplot_realtime", Arg("max_frequency") = static_cast<float>(sample_rate_hz),
           Arg("power_offset") = 0.0f,  // Can be adjusted for calibration
-          Arg("adc_bits") = adc_bits,
-          Arg("update_interval") = 10,
+          Arg("adc_bits") = adc_bits, Arg("update_interval") = 10,
           Arg("y_range") = std::vector<float>{-160.0f, 10.0f});  // dB range
 
       add_flow(fft_op, fft_gnuplot_realtime_op, {{"out", "buffer"}});
     } else {
       // FFTGnuplotOp - generates gnuplot visualization (runs once then stops)
       auto fft_gnuplot_op = make_operator<ops::FFTGnuplotOp>(
-          "fft_gnuplot",
-          Arg("output_file") = std::string("pluto_fft_spectrum"),
-          Arg("selected_burst") = 0,
-          Arg("max_frequency") = static_cast<float>(sample_rate_hz),
+          "fft_gnuplot", Arg("output_file") = std::string("pluto_fft_spectrum"),
+          Arg("selected_burst") = 0, Arg("max_frequency") = static_cast<float>(sample_rate_hz),
           Arg("power_offset") = 0.0f,  // Can be adjusted for calibration
           Arg("adc_bits") = adc_bits,
           make_condition<CountCondition>(1));  // Run only once, then application exits naturally

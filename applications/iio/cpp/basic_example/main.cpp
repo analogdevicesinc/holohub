@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 
+#include <dlpack/dlpack.h>
+#include <getopt.h>
 #include <yaml-cpp/exceptions.h>
+
 #include <filesystem>
 #include <holoscan/core/conditions/gxf/boolean.hpp>
 #include <holoscan/core/conditions/gxf/count.hpp>
 #include <holoscan/core/endpoint.hpp>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
+#include <iostream>
+
 #include "holoscan/holoscan.hpp"
 #include "iio_attribute_read.hpp"
 #include "iio_attribute_write.hpp"
@@ -30,10 +35,6 @@
 #include "iio_configurator.hpp"
 #include "iio_params.hpp"
 #include "support_operators.hpp"
-
-#include <dlpack/dlpack.h>
-#include <getopt.h>
-#include <iostream>
 
 class IIOBasicExampleApp : public holoscan::Application {
  public:
@@ -50,12 +51,10 @@ class IIOBasicExampleApp : public holoscan::Application {
 
     auto iio_read_cond = make_condition<CountCondition>("iio_read_cond", G_NUM_READS);
 
-    auto iio_read_op =
-        make_operator<ops::IIOAttributeRead>("iio_attribute_read",
-                                             Arg("ctx") = std::string(G_URI),
-                                             Arg("dev") = std::string("ad9361-phy"),
-                                             Arg("attr_name") = std::string("trx_rate_governor"),
-                                             iio_read_cond);
+    auto iio_read_op = make_operator<ops::IIOAttributeRead>(
+        "iio_attribute_read", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("ad9361-phy"), Arg("attr_name") = std::string("trx_rate_governor"),
+        iio_read_cond);
 
     auto basic_print_op = make_operator<ops::BasicPrinterOp>("basic_print_op");
 
@@ -68,12 +67,10 @@ class IIOBasicExampleApp : public holoscan::Application {
 
     auto iio_write_cond = make_condition<CountCondition>("iio_write_cond", G_NUM_READS);
 
-    auto iio_write_op =
-        make_operator<ops::IIOAttributeWrite>("iio_attribute_write",
-                                              Arg("ctx") = std::string(G_URI),
-                                              Arg("dev") = std::string("ad9361-phy"),
-                                              Arg("attr_name") = std::string("trx_rate_governor"),
-                                              iio_write_cond);
+    auto iio_write_op = make_operator<ops::IIOAttributeWrite>(
+        "iio_attribute_write", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("ad9361-phy"), Arg("attr_name") = std::string("trx_rate_governor"),
+        iio_write_cond);
 
     auto basic_emit_op = make_operator<ops::BasicEmitterOp>("basic_emit_op");
 
@@ -98,15 +95,12 @@ class IIOBasicExampleApp : public holoscan::Application {
       enabled_channels_output.push_back(false);
     }
 
-    auto iio_buf_read_op =
-        make_operator<ops::IIOBufferRead>("iio_buffer_read",
-                                          Arg("ctx") = std::string(G_URI),
-                                          Arg("dev") = std::string("cf-ad9361-lpc"),
-                                          Arg("is_cyclic") = true,
-                                          Arg("samples_count") = static_cast<size_t>(8192),
-                                          Arg("enabled_channel_names") = enabled_channels_names_1,
-                                          Arg("enabled_channel_output") = enabled_channels_output,
-                                          iio_rw_cond);
+    auto iio_buf_read_op = make_operator<ops::IIOBufferRead>(
+        "iio_buffer_read", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("cf-ad9361-lpc"), Arg("is_cyclic") = true,
+        Arg("samples_count") = static_cast<size_t>(8192),
+        Arg("enabled_channel_names") = enabled_channels_names_1,
+        Arg("enabled_channel_output") = enabled_channels_output, iio_rw_cond);
 
     auto basic_buffer_printer_op =
         make_operator<ops::BasicIIOBufferPrinterOP>("basic_buffer_printer_op");
@@ -133,14 +127,11 @@ class IIOBasicExampleApp : public holoscan::Application {
       enabled_channels_output.push_back(true);
     }
 
-    auto iio_buf_write_op_1 =
-        make_operator<ops::IIOBufferWrite>("iio_buffer_write_1",
-                                           Arg("ctx") = std::string(G_URI),
-                                           Arg("dev") = std::string("cf-ad9361-dds-core-lpc"),
-                                           Arg("is_cyclic") = true,
-                                           Arg("enabled_channel_names") = enabled_channels_names_1,
-                                           Arg("enabled_channel_output") = enabled_channels_output,
-                                           iio_rw_cond);
+    auto iio_buf_write_op_1 = make_operator<ops::IIOBufferWrite>(
+        "iio_buffer_write_1", Arg("ctx") = std::string(G_URI),
+        Arg("dev") = std::string("cf-ad9361-dds-core-lpc"), Arg("is_cyclic") = true,
+        Arg("enabled_channel_names") = enabled_channels_names_1,
+        Arg("enabled_channel_output") = enabled_channels_output, iio_rw_cond);
 
     auto basic_buffer_emitter_op =
         make_operator<ops::BasicIIOBufferEmitterOP>("basic_buffer_emitter_op");
@@ -172,70 +163,68 @@ class IIOBasicExampleApp : public holoscan::Application {
     int opt;
     int example_type = 0;  // Default to buffer read
 
-    static struct option long_options[] = {
-        {"attr-read", no_argument, 0, 'r'},
-        {"attr-write", no_argument, 0, 'w'},
-        {"buffer-read", no_argument, 0, 'b'},
-        {"buffer-write", no_argument, 0, 'B'},
-        {"configurator", no_argument, 0, 'c'},
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
-    };
+    static struct option long_options[] = {{"attr-read", no_argument, 0, 'r'},
+                                           {"attr-write", no_argument, 0, 'w'},
+                                           {"buffer-read", no_argument, 0, 'b'},
+                                           {"buffer-write", no_argument, 0, 'B'},
+                                           {"configurator", no_argument, 0, 'c'},
+                                           {"help", no_argument, 0, 'h'},
+                                           {0, 0, 0, 0}};
 
     int option_index = 0;
     optind = 1;  // Reset getopt parsing
 
     while ((opt = getopt_long(argc_, argv_, "rwbBch", long_options, &option_index)) != -1) {
-        switch (opt) {
-            case 'r':
-                example_type = 1;
-                break;
-            case 'w':
-                example_type = 2;
-                break;
-            case 'b':
-                example_type = 3;
-                break;
-            case 'B':
-                example_type = 4;
-                break;
-            case 'c':
-                example_type = 5;
-                break;
-            case 'h':
-                std::cout << "Usage: " << argv_[0] << " [options]\n"
-                          << "Options:\n"
-                          << "  -r, --attr-read     Run attribute read example\n"
-                          << "  -w, --attr-write    Run attribute write example\n"
-                          << "  -b, --buffer-read   Run buffer read example (default)\n"
-                          << "  -B, --buffer-write  Run buffer write example\n"
-                          << "  -c, --configurator  Run configurator example\n"
-                          << "  -h, --help          Show this help message\n";
-                exit(0);
-            default:
-                std::cerr << "Unknown option. Use -h for help.\n";
-                exit(1);
-        }
+      switch (opt) {
+        case 'r':
+          example_type = 1;
+          break;
+        case 'w':
+          example_type = 2;
+          break;
+        case 'b':
+          example_type = 3;
+          break;
+        case 'B':
+          example_type = 4;
+          break;
+        case 'c':
+          example_type = 5;
+          break;
+        case 'h':
+          std::cout << "Usage: " << argv_[0] << " [options]\n"
+                    << "Options:\n"
+                    << "  -r, --attr-read     Run attribute read example\n"
+                    << "  -w, --attr-write    Run attribute write example\n"
+                    << "  -b, --buffer-read   Run buffer read example (default)\n"
+                    << "  -B, --buffer-write  Run buffer write example\n"
+                    << "  -c, --configurator  Run configurator example\n"
+                    << "  -h, --help          Show this help message\n";
+          exit(0);
+        default:
+          std::cerr << "Unknown option. Use -h for help.\n";
+          exit(1);
+      }
     }
 
     // Run the selected example
     switch (example_type) {
-        case 1:
-            attr_read_example();
-            break;
-        case 2:
-            attr_write_example();
-            break;
-        case 4:
-            buffer_write_example();
-            break;
-        case 5:
-            configurator_example();
-            break;
-        case 3:
-        default:
-            buffer_read_example();
-            break;
+      case 1:
+        attr_read_example();
+        break;
+      case 2:
+        attr_write_example();
+        break;
+      case 4:
+        buffer_write_example();
+        break;
+      case 5:
+        configurator_example();
+        break;
+      case 3:
+      default:
+        buffer_read_example();
+        break;
     }
   }
 

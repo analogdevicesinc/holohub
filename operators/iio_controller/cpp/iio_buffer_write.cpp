@@ -16,12 +16,15 @@
  */
 
 #include "iio_buffer_write.hpp"
+
 #include <gxf/core/gxf.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstdint>
 #include <holoscan/logger/logger.hpp>
 #include <memory>
+
 #include "iio_params.hpp"
 
 using namespace holoscan::ops;
@@ -45,14 +48,10 @@ void IIOBufferWrite::setup(OperatorSpec& spec) {
   spec.param<std::string>(dev_p_, "dev", "IIO Device", "Name of the IIO Device");
   spec.param<bool>(is_cyclic, "is_cyclic", "Is cyclic", "Is the buffer cyclic?");
   spec.param<std::vector<std::string>>(
-      enabled_channel_names_p_,
-      "enabled_channel_names",
-      "Names of the enabled IIO Channels",
+      enabled_channel_names_p_, "enabled_channel_names", "Names of the enabled IIO Channels",
       "The names of the channels that are enabled when pushing the buffer");
   spec.param<std::vector<bool>>(
-      enabled_channel_types_p_,
-      "enabled_channel_output",
-      "Types of the enabled IIO Channels",
+      enabled_channel_types_p_, "enabled_channel_output", "Types of the enabled IIO Channels",
       "The types of the channels that are enabled when pushing the buffer");
 }
 
@@ -90,9 +89,7 @@ void IIOBufferWrite::initialize() {
     iio_channel* chn = api_->find_channel(dev_, chn_name, chn_type);
     if (!chn) {
       HOLOSCAN_LOG_ERROR("Failed to find {} channel {} from device {}",
-                         chn_type ? "output" : "input",
-                         chn_name,
-                         dev_p_.get());
+                         chn_type ? "output" : "input", chn_name, dev_p_.get());
       chan_not_found_ = true;
       return;
     }
@@ -109,8 +106,8 @@ void IIOBufferWrite::initialize() {
   // NOTE: Get sample size only after enabling the channels
   sample_size_ = api_->sample_size(dev_);
   if (sample_size_ < 0) {
-    HOLOSCAN_LOG_ERROR(
-        "Failed to get sample size from device {}; Err code: {}", dev_p_.get(), sample_size_);
+    HOLOSCAN_LOG_ERROR("Failed to get sample size from device {}; Err code: {}", dev_p_.get(),
+                       sample_size_);
     sample_size_failed_ = true;
     return;
   }
@@ -156,20 +153,18 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
 
   // Log the received buffer information for debugging
   HOLOSCAN_LOG_DEBUG("Received buffer from device: {}, samples: {}, cyclic: {}, channels: {}",
-                     buffer_info->device_name,
-                     buffer_info->samples_count,
-                     buffer_info->is_cyclic,
+                     buffer_info->device_name, buffer_info->samples_count, buffer_info->is_cyclic,
                      buffer_info->enabled_channels.size());
 
   if (!buffer_open_ || buffer_samples_count_ != buffer_info->samples_count) {
-    if (buffer_open_) { HOLOSCAN_LOG_INFO("Destroying buffer due to size mismatch."); }
+    if (buffer_open_) {
+      HOLOSCAN_LOG_INFO("Destroying buffer due to size mismatch.");
+    }
 
     HOLOSCAN_LOG_INFO("Creating new buffer with {} samples of size {} bytes.",
-                      buffer_info->samples_count,
-                      sample_size_);
+                      buffer_info->samples_count, sample_size_);
     buffer_samples_count_ = static_cast<uint32_t>(buffer_info->samples_count);
-    buffer_open_ =
-        api_->open_buffer(dev_, buffer_info->samples_count, buffer_info->is_cyclic);
+    buffer_open_ = api_->open_buffer(dev_, buffer_info->samples_count, buffer_info->is_cyclic);
     if (!buffer_open_) {
       HOLOSCAN_LOG_ERROR("Failed to create buffer, error code {}", errno);
       GxfGraphInterrupt(context.context());

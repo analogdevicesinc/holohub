@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 
-#include "iio_api.hpp"
-
 #include <iio.h>
 
 #include <cerrno>
 #include <cstring>
+
+#include "iio_api.hpp"
 
 namespace holoscan::ops {
 
 namespace {
 
 ssize_t device_attr_read(iio_device* dev, IIODeviceAttrType type, const char* name, char* dst,
-                          size_t len) {
+                         size_t len) {
   switch (type) {
     case IIODeviceAttrType::DEVICE:
       return iio_device_attr_read(dev, name, dst, len);
@@ -40,7 +40,7 @@ ssize_t device_attr_read(iio_device* dev, IIODeviceAttrType type, const char* na
 }
 
 ssize_t device_attr_write(iio_device* dev, IIODeviceAttrType type, const char* name,
-                           const char* src) {
+                          const char* src) {
   switch (type) {
     case IIODeviceAttrType::DEVICE:
       return iio_device_attr_write(dev, name, src);
@@ -152,7 +152,7 @@ class IIOApiV0 : public IIOApi {
   }
 
   ssize_t read_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
-                     std::string& out) override {
+                    std::string& out) override {
     char buf[1024];
     ssize_t ret = device_attr_read(dev, type, name.c_str(), buf, sizeof(buf));
     if (ret >= 0) out = buf;
@@ -167,12 +167,11 @@ class IIOApiV0 : public IIOApi {
   }
 
   ssize_t write_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
-                      const std::string& value) override {
+                     const std::string& value) override {
     return device_attr_write(dev, type, name.c_str(), value.c_str());
   }
 
-  ssize_t write_attr(iio_channel* chn, const std::string& name,
-                      const std::string& value) override {
+  ssize_t write_attr(iio_channel* chn, const std::string& name, const std::string& value) override {
     return iio_channel_attr_write(chn, name.c_str(), value.c_str());
   }
 

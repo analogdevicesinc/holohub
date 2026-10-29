@@ -18,6 +18,7 @@
 #pragma once
 #include <string>
 #include <vector>
+
 #include "iio_api.hpp"
 
 enum class attr_type_t {
@@ -61,7 +62,7 @@ struct iio_buffer_info_t {
  * @note If the channel pointer is null, returns a default-initialized structure
  */
 inline iio_channel_info_t create_channel_info_from_iio_channel(holoscan::ops::IIOApi& api,
-                                                                const iio_channel* channel) {
+                                                               const iio_channel* channel) {
   iio_channel_info_t info;
 
   if (!channel) {

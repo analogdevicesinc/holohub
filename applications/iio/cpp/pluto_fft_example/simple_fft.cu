@@ -27,10 +27,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "simple_fft.hpp"
-
 #include <stdexcept>
 #include <utility>
+
+#include "simple_fft.hpp"
 
 using in_t = std::tuple<tensor_t<complex, 2>, cudaStream_t>;
 using out_t = std::tuple<tensor_t<complex, 2>, cudaStream_t>;
@@ -41,8 +41,8 @@ void SimpleFFT::setup(OperatorSpec& spec) {
   spec.input<in_t>("in");
   spec.output<out_t>("out");
   spec.param(burst_size, "burst_size", "Burst size", "Number of samples to process in each burst");
-  spec.param(
-      num_bursts, "num_bursts", "Number of bursts", "Number of sample bursts to process at once");
+  spec.param(num_bursts, "num_bursts", "Number of bursts",
+             "Number of sample bursts to process at once");
 }
 
 void SimpleFFT::initialize() {
@@ -59,19 +59,15 @@ void SimpleFFT::compute(InputContext& op_input, OutputContext& op_output, Execut
 
   if (input_tensor.Size(0) != num_bursts.get() || input_tensor.Size(1) != burst_size.get()) {
     throw std::runtime_error(fmt::format(
-        "FFT input shape ({}, {}) must match configured shape ({}, {})",
-        input_tensor.Size(0),
-        input_tensor.Size(1),
-        num_bursts.get(),
-        burst_size.get()));
+        "FFT input shape ({}, {}) must match configured shape ({}, {})", input_tensor.Size(0),
+        input_tensor.Size(1), num_bursts.get(), burst_size.get()));
   }
 
   // Every emitted message owns its output storage. Reusing one tensor per
   // channel can overwrite data while another branch still consumes it.
   auto out = make_tensor<complex>(
       {static_cast<index_t>(num_bursts.get()), static_cast<index_t>(burst_size.get())},
-      MATX_ASYNC_DEVICE_MEMORY,
-      stream);
+      MATX_ASYNC_DEVICE_MEMORY, stream);
 
   (out = fftshift1D(fft(input_tensor))).run(stream);
 

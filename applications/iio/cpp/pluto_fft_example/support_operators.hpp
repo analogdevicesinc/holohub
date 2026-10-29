@@ -17,25 +17,26 @@
 
 #pragma once
 
+#include <cuda_runtime.h>
+#include <matx.h>
+
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <holoscan/core/application.hpp>
 #include <holoscan/core/conditions/gxf/boolean.hpp>
 #include <holoscan/core/conditions/gxf/count.hpp>
 #include <holoscan/core/endpoint.hpp>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
-#include "holoscan/holoscan.hpp"
-#include "iio_params.hpp"
-
-#include <cuda_runtime.h>
-#include <matx.h>
-#include <chrono>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
 #include <iomanip>
 #include <memory>
 #include <vector>
+
+#include "holoscan/holoscan.hpp"
+#include "iio_params.hpp"
 
 using namespace matx;
 using complex = cuda::std::complex<float>;
@@ -60,18 +61,13 @@ class BinaryFileReaderOp : public Operator {
     spec.param(file_path_, "file_path", "File Path", "Path to the binary file to read");
     spec.param(device_name_, "device_name", "Device Name", "Name of the target device");
     spec.param(channel_names_, "channel_names", "Channel Names", "List of channel names");
-    spec.param(
-        channel_outputs_, "channel_outputs", "Channel Outputs", "List of channel output flags");
-    spec.param(samples_per_channel_,
-               "samples_per_channel",
-               "Samples Per Channel",
+    spec.param(channel_outputs_, "channel_outputs", "Channel Outputs",
+               "List of channel output flags");
+    spec.param(samples_per_channel_, "samples_per_channel", "Samples Per Channel",
                "Number of samples per channel");
     spec.param(is_cyclic_, "is_cyclic", "Is Cyclic", "Whether the buffer should be cyclic", true);
-    spec.param(sample_size_bytes_,
-               "sample_size_bytes",
-               "Sample Size",
-               "Size of each sample in bytes",
-               static_cast<size_t>(2));
+    spec.param(sample_size_bytes_, "sample_size_bytes", "Sample Size",
+               "Size of each sample in bytes", static_cast<size_t>(2));
   }
 
   void initialize() override {
@@ -132,10 +128,8 @@ class BinaryFileReaderOp : public Operator {
     size_t slide_amount = expected_size / 2;  // 50% overlap
     current_offset_ += slide_amount;
 
-    HOLOSCAN_LOG_DEBUG("Read {} bytes from offset {}, next offset: {}",
-                       expected_size,
-                       current_offset_ - slide_amount,
-                       current_offset_);
+    HOLOSCAN_LOG_DEBUG("Read {} bytes from offset {}, next offset: {}", expected_size,
+                       current_offset_ - slide_amount, current_offset_);
 
     // Populate channel information
     auto& channel_names = channel_names_.get();
@@ -152,10 +146,7 @@ class BinaryFileReaderOp : public Operator {
     }
 
     HOLOSCAN_LOG_DEBUG("Read {} bytes from file {} for {} channels with {} samples per channel",
-                       expected_size,
-                       file_path_.get(),
-                       num_channels,
-                       samples_per_channel_.get());
+                       expected_size, file_path_.get(), num_channels, samples_per_channel_.get());
 
     // Emit the buffer
     op_output.emit(buffer_info, "buffer");
@@ -187,11 +178,8 @@ class IIOChannelConvertOp : public Operator {
   void setup(OperatorSpec& spec) override {
     spec.input<iio_buffer_info_t>("buffer_in");
     spec.output<iio_buffer_info_t>("buffer_out");
-    spec.param(convert_channels_,
-               "convert_channels",
-               "Convert channels",
-               "Apply IIO channel conversion",
-               true);
+    spec.param(convert_channels_, "convert_channels", "Convert channels",
+               "Apply IIO channel conversion", true);
   }
 
   void initialize() override {
@@ -323,15 +311,12 @@ class IIOBuffer2CudaTensorOp : public Operator {
   void setup(OperatorSpec& spec) override {
     spec.input<iio_buffer_info_t>("buffer");
     spec.output<std::tuple<tensor_t<complex, 2>, cudaStream_t>>("tensor");
-    spec.param(
-        num_channels_, "num_channels", "Number of channels", "Number of channels in the data", 1U);
-    spec.param(samples_per_channel_,
-               "samples_per_channel",
-               "Samples per channel",
-               "Number of samples per channel",
-               8192UL);
-    spec.param(
-        burst_size_, "burst_size", "Burst size", "Number of samples per burst for FFT", 1024);
+    spec.param(num_channels_, "num_channels", "Number of channels",
+               "Number of channels in the data", 1U);
+    spec.param(samples_per_channel_, "samples_per_channel", "Samples per channel",
+               "Number of samples per channel", 8192UL);
+    spec.param(burst_size_, "burst_size", "Burst size", "Number of samples per burst for FFT",
+               1024);
     spec.param(num_bursts_, "num_bursts", "Number of bursts", "Number of bursts for FFT", 8);
     spec.param(adc_bits_, "adc_bits", "ADC bits", "ADC resolution in bits", 11);
   }
@@ -364,9 +349,7 @@ class IIOBuffer2CudaTensorOp : public Operator {
     // Validate dimensions
     if (num_channels != num_channels_.get() || samples_per_channel != samples_per_channel_.get()) {
       HOLOSCAN_LOG_WARN("Buffer dimensions mismatch: expected {}x{}, got {}x{}",
-                        num_channels_.get(),
-                        samples_per_channel_.get(),
-                        num_channels,
+                        num_channels_.get(), samples_per_channel_.get(), num_channels,
                         samples_per_channel);
     }
 
@@ -395,11 +378,8 @@ class IIOBuffer2CudaTensorOp : public Operator {
     }
 
     // Copy all data to GPU at once
-    cudaMemcpyAsync(output_tensor_.Data(),
-                    host_data.data(),
-                    total_complex_samples * sizeof(complex),
-                    cudaMemcpyHostToDevice,
-                    stream_);
+    cudaMemcpyAsync(output_tensor_.Data(), host_data.data(),
+                    total_complex_samples * sizeof(complex), cudaMemcpyHostToDevice, stream_);
   }
 
   Parameter<unsigned int> num_channels_;
@@ -418,8 +398,8 @@ class IIOBuffer2CudaTensorOp : public Operator {
 
 // Common FFT processing utilities
 namespace fft_utils {
-inline std::vector<float> convertToMagnitudeSpectrum(const complex* host_data,
-                                                     size_t burst_size, float power_offset,
+inline std::vector<float> convertToMagnitudeSpectrum(const complex* host_data, size_t burst_size,
+                                                     float power_offset,
                                                      float noise_floor_threshold = 1e-10f) {
   std::vector<float> magnitude_spectrum(burst_size);
   const float fft_normalization =
@@ -472,14 +452,11 @@ class FFTGnuplotOp : public Operator {
 
   void setup(OperatorSpec& spec) override {
     spec.input<std::tuple<tensor_t<complex, 2>, cudaStream_t>>("buffer");
-    spec.param(output_file_,
-               "output_file",
-               "Output file",
-               "Base name for output files",
+    spec.param(output_file_, "output_file", "Output file", "Base name for output files",
                std::string("fft_spectrum"));
     spec.param(selected_burst_, "selected_burst", "Selected burst", "Which burst to plot", 0);
-    spec.param(
-        max_frequency_, "max_frequency", "Max frequency", "Maximum frequency (Hz)", 1000000.0f);
+    spec.param(max_frequency_, "max_frequency", "Max frequency", "Maximum frequency (Hz)",
+               1000000.0f);
     spec.param(power_offset_, "power_offset", "Power offset", "Power offset in dB", 0.0f);
     spec.param(adc_bits_, "adc_bits", "ADC bits", "ADC resolution in bits", 12);
   }
@@ -500,8 +477,8 @@ class FFTGnuplotOp : public Operator {
     // Select which burst to visualize
     size_t selected_burst = std::min(static_cast<size_t>(selected_burst_.get()), num_bursts - 1);
 
-    HOLOSCAN_LOG_DEBUG(
-        "Generating gnuplot for burst {} with {} FFT bins", selected_burst, burst_size);
+    HOLOSCAN_LOG_DEBUG("Generating gnuplot for burst {} with {} FFT bins", selected_burst,
+                       burst_size);
 
     // Allocate pinned memory if needed or if size changed
     if (!pinned_host_data_ || pinned_buffer_size_ < burst_size) {
@@ -513,10 +490,8 @@ class FFTGnuplotOp : public Operator {
     }
 
     // Copy data for selected burst to pinned host memory (faster DMA transfer)
-    cudaMemcpy(pinned_host_data_,
-               tensor.Data() + selected_burst * burst_size,
-               burst_size * sizeof(complex),
-               cudaMemcpyDeviceToHost);
+    cudaMemcpy(pinned_host_data_, tensor.Data() + selected_burst * burst_size,
+               burst_size * sizeof(complex), cudaMemcpyDeviceToHost);
 
     // Convert to magnitude spectrum using pinned memory directly (no extra copy)
     auto magnitude_spectrum =
@@ -564,8 +539,8 @@ class FFTGnuplotOp : public Operator {
 
     if (result == 0) {
       HOLOSCAN_LOG_INFO("Gnuplot spectrum saved to: {}.png", output_file_.get());
-      HOLOSCAN_LOG_INFO(
-          "Peak frequency: {:.2f} MHz with magnitude: {:.1f} dB", peak_freq_mhz, peak_magnitude);
+      HOLOSCAN_LOG_INFO("Peak frequency: {:.2f} MHz with magnitude: {:.1f} dB", peak_freq_mhz,
+                        peak_magnitude);
     } else {
       HOLOSCAN_LOG_ERROR("Gnuplot execution failed with return code: {}", result);
     }
@@ -609,19 +584,13 @@ class FFTGnuplotRealtimeOp : public Operator {
 
   void setup(OperatorSpec& spec) override {
     spec.input<std::tuple<tensor_t<complex, 2>, cudaStream_t>>("buffer");
-    spec.param(
-        max_frequency_, "max_frequency", "Max frequency", "Maximum frequency (Hz)", 1000000.0f);
+    spec.param(max_frequency_, "max_frequency", "Max frequency", "Maximum frequency (Hz)",
+               1000000.0f);
     spec.param(power_offset_, "power_offset", "Power offset", "Power offset in dB", 0.0f);
     spec.param(adc_bits_, "adc_bits", "ADC bits", "ADC resolution in bits", 12);
-    spec.param(update_interval_,
-               "update_interval",
-               "Update interval",
-               "Update interval in milliseconds",
-               100);
-    spec.param(y_range_,
-               "y_range",
-               "Y-axis range",
-               "Y-axis range [min, max]",
+    spec.param(update_interval_, "update_interval", "Update interval",
+               "Update interval in milliseconds", 100);
+    spec.param(y_range_, "y_range", "Y-axis range", "Y-axis range [min, max]",
                std::vector<float>{-160.0f, 0.0f});
   }
 
@@ -688,17 +657,12 @@ class FFTGnuplotRealtimeOp : public Operator {
     }
 
     // Copy data for selected burst to pinned host memory (faster DMA transfer)
-    cudaMemcpy(pinned_host_data_,
-               tensor.Data() + selected_burst * burst_size,
-               burst_size * sizeof(complex),
-               cudaMemcpyDeviceToHost);
+    cudaMemcpy(pinned_host_data_, tensor.Data() + selected_burst * burst_size,
+               burst_size * sizeof(complex), cudaMemcpyDeviceToHost);
 
     // Convert to magnitude spectrum using pinned memory directly (no extra copy)
-    auto magnitude_spectrum =
-        fft_utils::convertToMagnitudeSpectrum(pinned_host_data_,
-                                              burst_size,
-                                              power_offset_.get(),
-                                              1e-20f);
+    auto magnitude_spectrum = fft_utils::convertToMagnitudeSpectrum(pinned_host_data_, burst_size,
+                                                                    power_offset_.get(), 1e-20f);
 
     // Find peak frequency for title
     float freq_step = max_frequency_.get() / static_cast<float>(burst_size);
@@ -707,10 +671,8 @@ class FFTGnuplotRealtimeOp : public Operator {
         fft_utils::findPeakFrequency(magnitude_spectrum, burst_size, freq_step_mhz);
 
     // Send data to gnuplot with updated title showing peak
-    fprintf(gnuplot_pipe_,
-            "set title 'Pluto SDR Real-Time FFT - Peak: %.2f MHz (%.1f dB)'\n",
-            peak_freq_mhz,
-            peak_magnitude);
+    fprintf(gnuplot_pipe_, "set title 'Pluto SDR Real-Time FFT - Peak: %.2f MHz (%.1f dB)'\n",
+            peak_freq_mhz, peak_magnitude);
     fprintf(gnuplot_pipe_, "plot '-' with lines linestyle 1 title 'FFT Magnitude'\n");
 
     for (size_t i = 0; i < burst_size; ++i) {

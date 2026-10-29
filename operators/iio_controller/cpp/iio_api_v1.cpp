@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include "iio_api.hpp"
-
 #include <iio/iio.h>
 
 #include <cerrno>
 #include <cstring>
+
+#include "iio_api.hpp"
 
 namespace holoscan::ops {
 
@@ -227,7 +227,7 @@ class IIOApiV1 : public IIOApi {
   }
 
   ssize_t read_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
-                     std::string& out) override {
+                    std::string& out) override {
     const iio_attr* attr = find_device_attr(dev, type, name.c_str());
     if (!attr) return -ENOENT;
     char buf[1024];
@@ -246,14 +246,13 @@ class IIOApiV1 : public IIOApi {
   }
 
   ssize_t write_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
-                      const std::string& value) override {
+                     const std::string& value) override {
     const iio_attr* attr = find_device_attr(dev, type, name.c_str());
     if (!attr) return -ENOENT;
     return iio_attr_write_string(attr, value.c_str());
   }
 
-  ssize_t write_attr(iio_channel* chn, const std::string& name,
-                      const std::string& value) override {
+  ssize_t write_attr(iio_channel* chn, const std::string& name, const std::string& value) override {
     const iio_attr* attr = iio_channel_find_attr(chn, name.c_str());
     if (!attr) return -ENOENT;
     return iio_attr_write_string(attr, value.c_str());

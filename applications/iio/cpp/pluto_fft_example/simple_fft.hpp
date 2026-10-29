@@ -29,8 +29,10 @@
 
 #pragma once
 
-#include <cstdint>
 #include <matx.h>
+
+#include <cstdint>
+
 #include "holoscan/holoscan.hpp"
 
 using namespace matx;

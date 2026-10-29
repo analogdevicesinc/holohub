@@ -17,20 +17,20 @@
 
 #pragma once
 
+#include <cmath>
+#include <cstdlib>
 #include <holoscan/core/application.hpp>
 #include <holoscan/core/conditions/gxf/boolean.hpp>
 #include <holoscan/core/conditions/gxf/count.hpp>
 #include <holoscan/core/endpoint.hpp>
 #include <holoscan/core/forward_def.hpp>
 #include <holoscan/core/operator.hpp>
-#include "holoscan/holoscan.hpp"
-#include "iio_params.hpp"
-
-#include <cmath>
-#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#include "holoscan/holoscan.hpp"
+#include "iio_params.hpp"
 
 static constexpr int G_NUM_READS = 10;
 static constexpr const char* G_URI = "ip:192.168.2.1";
@@ -195,9 +195,7 @@ class BasicIIOBufferPrinterOP : public Operator {
 
     // Print buffer metadata
     HOLOSCAN_LOG_INFO("Buffer info: samples_count={}, device={}, cyclic={}, channels={}",
-                      buffer_info->samples_count,
-                      buffer_info->device_name,
-                      buffer_info->is_cyclic,
+                      buffer_info->samples_count, buffer_info->device_name, buffer_info->is_cyclic,
                       enabled_channels);
 
     // Print channel information
@@ -220,7 +218,9 @@ class BasicIIOBufferPrinterOP : public Operator {
 
     if (enabled_channels == 1) {
       std::cout << "Channel 0: ";
-      for (size_t i = 0; i < max_samples; ++i) { std::cout << buffer[i] << " "; }
+      for (size_t i = 0; i < max_samples; ++i) {
+        std::cout << buffer[i] << " ";
+      }
       std::cout << std::endl;
     } else {
       // Print interleaved samples for each channel

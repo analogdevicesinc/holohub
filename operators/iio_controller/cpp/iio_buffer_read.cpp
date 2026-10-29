@@ -16,9 +16,12 @@
  */
 
 #include "iio_buffer_read.hpp"
+
 #include <gxf/core/gxf.h>
+
 #include <cerrno>
 #include <cstring>
+
 #include "iio_params.hpp"
 
 using namespace holoscan::ops;
@@ -42,17 +45,13 @@ void IIOBufferRead::setup(OperatorSpec& spec) {
   spec.param<std::string>(ctx_p_, "ctx", "IIO Context", "The URI of the IIO Context");
   spec.param<std::string>(dev_p_, "dev", "IIO Device", "Name of the IIO Device");
   spec.param<bool>(is_cyclic, "is_cyclic", "Is cyclic", "Is the buffer cyclic?");
-  spec.param<size_t>(
-      samples_count_p_, "samples_count", "Samples count", "Number of samples to read");
+  spec.param<size_t>(samples_count_p_, "samples_count", "Samples count",
+                     "Number of samples to read");
   spec.param<std::vector<std::string>>(
-      enabled_channel_names_p_,
-      "enabled_channel_names",
-      "Names of the enabled IIO Channels",
+      enabled_channel_names_p_, "enabled_channel_names", "Names of the enabled IIO Channels",
       "The names of the channels that are enabled when pushing the buffer");
   spec.param<std::vector<bool>>(
-      enabled_channel_types_p_,
-      "enabled_channel_output",
-      "Types of the enabled IIO Channels",
+      enabled_channel_types_p_, "enabled_channel_output", "Types of the enabled IIO Channels",
       "The types of the channels that are enabled when pushing the buffer");
 }
 
@@ -122,8 +121,8 @@ void IIOBufferRead::initialize() {
 
   ssize_t sample_size = api_->sample_size(dev_);
   if (sample_size < 0) {
-    HOLOSCAN_LOG_ERROR(
-        "Failed to get sample size from device {}; Err code: {}", dev_p_.get(), sample_size);
+    HOLOSCAN_LOG_ERROR("Failed to get sample size from device {}; Err code: {}", dev_p_.get(),
+                       sample_size);
     sample_size_failed_ = true;
     return;
   }
@@ -206,8 +205,8 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
   }
 
   if (!buffer_open_) {
-    HOLOSCAN_LOG_INFO(
-        "Creating buffer with {} samples of size {} bytes", samples_count_p_.get(), sample_size_);
+    HOLOSCAN_LOG_INFO("Creating buffer with {} samples of size {} bytes", samples_count_p_.get(),
+                      sample_size_);
     buffer_open_ = api_->open_buffer(dev_, samples_count_p_.get(), false);
     if (!buffer_open_) {
       HOLOSCAN_LOG_ERROR("Failed to create buffer, error code {}", errno);

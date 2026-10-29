@@ -18,6 +18,7 @@
 #pragma once
 
 #include <sys/types.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -56,8 +57,7 @@ class IIOApi {
   virtual iio_context* create_context(const std::string& uri) = 0;
   virtual void destroy_context(iio_context* ctx) = 0;
   virtual iio_device* find_device(iio_context* ctx, const std::string& name) = 0;
-  virtual iio_channel* find_channel(iio_device* dev, const std::string& name,
-                                     bool is_output) = 0;
+  virtual iio_channel* find_channel(iio_device* dev, const std::string& name, bool is_output) = 0;
 
   virtual std::string device_name(const iio_device* dev) = 0;
   virtual std::string channel_id(const iio_channel* chn) = 0;
@@ -76,16 +76,14 @@ class IIOApi {
   virtual ssize_t push(const void* data, size_t bytes) = 0;
   virtual void close_buffer() = 0;
 
-  virtual ssize_t read_attr(iio_context* ctx, const std::string& name,
-                             std::string& out) = 0;
-  virtual ssize_t read_attr(iio_device* dev, IIODeviceAttrType type,
-                             const std::string& name, std::string& out) = 0;
-  virtual ssize_t read_attr(iio_channel* chn, const std::string& name,
-                             std::string& out) = 0;
-  virtual ssize_t write_attr(iio_device* dev, IIODeviceAttrType type,
-                              const std::string& name, const std::string& value) = 0;
+  virtual ssize_t read_attr(iio_context* ctx, const std::string& name, std::string& out) = 0;
+  virtual ssize_t read_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
+                            std::string& out) = 0;
+  virtual ssize_t read_attr(iio_channel* chn, const std::string& name, std::string& out) = 0;
+  virtual ssize_t write_attr(iio_device* dev, IIODeviceAttrType type, const std::string& name,
+                             const std::string& value) = 0;
   virtual ssize_t write_attr(iio_channel* chn, const std::string& name,
-                              const std::string& value) = 0;
+                             const std::string& value) = 0;
 };
 
 std::unique_ptr<IIOApi> make_iio_api();

@@ -15,25 +15,23 @@
  * limitations under the License.
  */
 
-#include <cstring>
-#include <memory>
-#include <string>
-
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <cstring>
 #include <holoscan/core/fragment.hpp>
 #include <holoscan/core/operator.hpp>
 #include <holoscan/core/operator_spec.hpp>
 #include <holoscan/python/core/emitter_receiver_registry.hpp>
-#include "../../operator_util.hpp"
+#include <memory>
+#include <string>
 
+#include "../../operator_util.hpp"
 #include "../cpp/iio_attribute_read.hpp"
 #include "../cpp/iio_attribute_write.hpp"
 #include "../cpp/iio_buffer_read.hpp"
 #include "../cpp/iio_buffer_write.hpp"
 #include "../cpp/iio_params.hpp"
-
 #include "iio_configurator.hpp"
 #include "iio_controller_pydoc.hpp"
 
@@ -94,11 +92,8 @@ class PyIIOAttributeRead : public IIOAttributeRead {
   PyIIOAttributeRead(holoscan::Fragment* fragment, const py::args& args, std::string ctx,
                      std::string attr_name, std::string dev = "", std::string chan = "",
                      bool channel_is_output = false, const std::string& name = "iio_attribute_read")
-      : IIOAttributeRead(ArgList{Arg("ctx", ctx),
-                                 Arg("attr_name", attr_name),
-                                 Arg("dev", dev),
-                                 Arg("chan", chan),
-                                 Arg("channel_is_output", channel_is_output)}) {
+      : IIOAttributeRead(ArgList{Arg("ctx", ctx), Arg("attr_name", attr_name), Arg("dev", dev),
+                                 Arg("chan", chan), Arg("channel_is_output", channel_is_output)}) {
     add_positional_condition_and_resource_args(this, args);
     name_ = name;
     fragment_ = fragment;
@@ -115,11 +110,8 @@ class PyIIOAttributeWrite : public IIOAttributeWrite {
                       std::string attr_name, std::string dev = "", std::string chan = "",
                       bool channel_is_output = false,
                       const std::string& name = "iio_attribute_read")
-      : IIOAttributeWrite(ArgList{Arg("ctx", ctx),
-                                  Arg("attr_name", attr_name),
-                                  Arg("dev", dev),
-                                  Arg("chan", chan),
-                                  Arg("channel_is_output", channel_is_output)}) {
+      : IIOAttributeWrite(ArgList{Arg("ctx", ctx), Arg("attr_name", attr_name), Arg("dev", dev),
+                                  Arg("chan", chan), Arg("channel_is_output", channel_is_output)}) {
     add_positional_condition_and_resource_args(this, args);
     name_ = name;
     fragment_ = fragment;
@@ -137,9 +129,7 @@ class PyIIOBufferRead : public IIOBufferRead {
                   std::vector<std::string> enabled_channel_names,
                   std::vector<bool> enabled_channel_output,
                   const std::string& name = "iio_buffer_read")
-      : IIOBufferRead(ArgList{Arg("ctx", ctx),
-                              Arg("dev", dev),
-                              Arg("is_cyclic", is_cyclic),
+      : IIOBufferRead(ArgList{Arg("ctx", ctx), Arg("dev", dev), Arg("is_cyclic", is_cyclic),
                               Arg("samples_count", samples_count),
                               Arg("enabled_channel_names", enabled_channel_names),
                               Arg("enabled_channel_output", enabled_channel_output)}) {
@@ -159,9 +149,7 @@ class PyIIOBufferWrite : public IIOBufferWrite {
                    std::string dev, bool is_cyclic, std::vector<std::string> enabled_channel_names,
                    std::vector<bool> enabled_channel_output,
                    const std::string& name = "iio_buffer_write")
-      : IIOBufferWrite(ArgList{Arg("ctx", ctx),
-                               Arg("dev", dev),
-                               Arg("is_cyclic", is_cyclic),
+      : IIOBufferWrite(ArgList{Arg("ctx", ctx), Arg("dev", dev), Arg("is_cyclic", is_cyclic),
                                Arg("enabled_channel_names", enabled_channel_names),
                                Arg("enabled_channel_output", enabled_channel_output)}) {
     add_positional_condition_and_resource_args(this, args);
@@ -216,8 +204,7 @@ PYBIND11_MODULE(_iio_controller, m) {
              fmt.repeat = pyiio_format.attr("repeat").cast<unsigned int>();
              return fmt;
            }),
-           "Create IIODataFormat from pyiio data format object",
-           py::arg("pyiio_format"))
+           "Create IIODataFormat from pyiio data format object", py::arg("pyiio_format"))
       .def_readwrite("length", &IIODataFormat::length)
       .def_readwrite("bits", &IIODataFormat::bits)
       .def_readwrite("shift", &IIODataFormat::shift)
@@ -245,8 +232,7 @@ PYBIND11_MODULE(_iio_controller, m) {
       .def_property(
           "buffer",
           [](const iio_buffer_info_t& self) -> py::bytes {
-            if (self.buffer == nullptr)
-              return py::bytes();
+            if (self.buffer == nullptr) return py::bytes();
             return py::bytes(static_cast<char*>(self.buffer), self.samples_count * sizeof(int16_t));
           },
           [](iio_buffer_info_t& self, py::bytes data) {
@@ -255,108 +241,52 @@ PYBIND11_MODULE(_iio_controller, m) {
             std::memcpy(self.buffer, str_data.data(), str_data.size());
           });
 
-  py::class_<IIOAttributeRead,
-             PyIIOAttributeRead,
-             holoscan::Operator,
+  py::class_<IIOAttributeRead, PyIIOAttributeRead, holoscan::Operator,
              std::shared_ptr<IIOAttributeRead>>(
       m, "IIOAttributeRead", holoscan::doc::IIOAttributeRead::doc_IIOAttributeRead_python)
-      .def(py::init<holoscan::Fragment*,
-                    const py::args&,
-                    std::string,
-                    std::string,
-                    std::string,
-                    std::string,
-                    bool,
-                    const std::string&>(),
-           "fragment"_a,
-           "ctx"_a,
-           "attr_name"_a,
-           "dev"_a = ""s,
-           "chan"_a = ""s,
-           "channel_is_output"_a = false,
-           "name"_a = "iio_attribute_read"s,
+      .def(py::init<holoscan::Fragment*, const py::args&, std::string, std::string, std::string,
+                    std::string, bool, const std::string&>(),
+           "fragment"_a, "ctx"_a, "attr_name"_a, "dev"_a = ""s, "chan"_a = ""s,
+           "channel_is_output"_a = false, "name"_a = "iio_attribute_read"s,
            holoscan::doc::IIOAttributeRead::doc_IIOAttributeRead_python)
-      .def("initialize",
-           &IIOAttributeRead::initialize,
+      .def("initialize", &IIOAttributeRead::initialize,
            holoscan::doc::IIOAttributeRead::doc_initialize);
 
-  py::class_<IIOAttributeWrite,
-             PyIIOAttributeWrite,
-             holoscan::Operator,
+  py::class_<IIOAttributeWrite, PyIIOAttributeWrite, holoscan::Operator,
              std::shared_ptr<IIOAttributeWrite>>(
       m, "IIOAttributeWrite", holoscan::doc::IIOAttributeWrite::doc_IIOAttributeWrite_python)
-      .def(py::init<Fragment*,
-                    const py::args&,
-                    std::string,
-                    std::string,
-                    std::string,
-                    std::string,
-                    bool,
-                    const std::string&>(),
-           "fragment"_a,
-           "ctx"_a,
-           "attr_name"_a,
-           "dev"_a = ""s,
-           "chan"_a = ""s,
-           "channel_is_output"_a = false,
-           "name"_a = "iio_attribute_write"s,
+      .def(py::init<Fragment*, const py::args&, std::string, std::string, std::string, std::string,
+                    bool, const std::string&>(),
+           "fragment"_a, "ctx"_a, "attr_name"_a, "dev"_a = ""s, "chan"_a = ""s,
+           "channel_is_output"_a = false, "name"_a = "iio_attribute_write"s,
            holoscan::doc::IIOAttributeWrite::doc_IIOAttributeWrite_python)
-      .def("initialize",
-           &IIOAttributeWrite::initialize,
+      .def("initialize", &IIOAttributeWrite::initialize,
            holoscan::doc::IIOAttributeWrite::doc_initialize);
 
   py::class_<IIOBufferWrite, PyIIOBufferWrite, holoscan::Operator, std::shared_ptr<IIOBufferWrite>>(
       m, "IIOBufferWrite", holoscan::doc::IIOBufferWrite::doc_IIOBufferWrite_python)
-      .def(py::init<Fragment*,
-                    const py::args&,
-                    std::string,
-                    std::string,
-                    bool,
-                    std::vector<std::string>,
-                    std::vector<bool>,
-                    const std::string&>(),
-           "fragment"_a,
-           "ctx"_a,
-           "dev"_a,
-           "is_cyclic"_a,
-           "enabled_channel_names"_a,
-           "enabled_channel_output"_a,
-           "name"_a = "iio_buffer_write"s,
+      .def(py::init<Fragment*, const py::args&, std::string, std::string, bool,
+                    std::vector<std::string>, std::vector<bool>, const std::string&>(),
+           "fragment"_a, "ctx"_a, "dev"_a, "is_cyclic"_a, "enabled_channel_names"_a,
+           "enabled_channel_output"_a, "name"_a = "iio_buffer_write"s,
            holoscan::doc::IIOBufferWrite::doc_IIOBufferWrite_python)
-      .def(
-          "initialize", &IIOBufferWrite::initialize, holoscan::doc::IIOBufferWrite::doc_initialize);
+      .def("initialize", &IIOBufferWrite::initialize,
+           holoscan::doc::IIOBufferWrite::doc_initialize);
 
   py::class_<IIOBufferRead, PyIIOBufferRead, holoscan::Operator, std::shared_ptr<IIOBufferRead>>(
       m, "IIOBufferRead", holoscan::doc::IIOBufferRead::doc_IIOBufferRead_python)
-      .def(py::init<Fragment*,
-                    const py::args&,
-                    std::string,
-                    std::string,
-                    bool,
-                    size_t,
-                    std::vector<std::string>,
-                    std::vector<bool>,
-                    const std::string&>(),
-           "fragment"_a,
-           "ctx"_a,
-           "dev"_a,
-           "is_cyclic"_a,
-           "samples_count"_a,
-           "enabled_channel_names"_a,
-           "enabled_channel_input"_a,
-           "name"_a = "iio_buffer_read"s,
+      .def(py::init<Fragment*, const py::args&, std::string, std::string, bool, size_t,
+                    std::vector<std::string>, std::vector<bool>, const std::string&>(),
+           "fragment"_a, "ctx"_a, "dev"_a, "is_cyclic"_a, "samples_count"_a,
+           "enabled_channel_names"_a, "enabled_channel_input"_a, "name"_a = "iio_buffer_read"s,
            holoscan::doc::IIOBufferRead::doc_IIOBufferRead_python)
       .def("initialize", &IIOBufferRead::initialize, holoscan::doc::IIOBufferRead::doc_initialize);
 
-  py::class_<IIOConfigurator,
-             PyIIOConfigurator,
-             holoscan::Operator,
-             std::shared_ptr<IIOConfigurator>>(
-      m, "IIOConfigurator", doc::IIOConfigurator::doc_IIOConfigurator_python)
-      .def(py::init<Fragment*, const py::args&, std::string, const std::string&>(),
-           "fragment"_a,
-           "cfg"_a,
-           "name"_a = "iio_configurator"s,
+  py::class_<IIOConfigurator, PyIIOConfigurator, holoscan::Operator,
+             std::shared_ptr<IIOConfigurator>>(m, "IIOConfigurator",
+                                               doc::IIOConfigurator::doc_IIOConfigurator_python)
+      .def(py::init<Fragment*, const py::args&, std::string, const std::string&>(), "fragment"_a,
+           "cfg"_a, "name"_a = "iio_configurator"s,
            holoscan::doc::IIOConfigurator::doc_IIOConfigurator_python);
 
   // Helper function to create channel info from IIO channel
@@ -368,8 +298,7 @@ PYBIND11_MODULE(_iio_controller, m) {
         static std::unique_ptr<IIOApi> api = make_iio_api();
         return create_channel_info_from_iio_channel(*api, channel);
       },
-      "Create an IIOChannelInfo structure from an IIO channel pointer",
-      py::arg("channel"));
+      "Create an IIOChannelInfo structure from an IIO channel pointer", py::arg("channel"));
 
   // Register custom types with the emitter/receiver registry
   m.def("register_types", [](holoscan::EmitterReceiverRegistry& registry) {

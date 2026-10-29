@@ -16,6 +16,7 @@
  */
 
 #include "iio_attribute_write.hpp"
+
 #include <gxf/core/gxf.h>
 
 using namespace holoscan::ops;
@@ -28,11 +29,8 @@ void IIOAttributeWrite::setup(OperatorSpec& spec) {
   spec.param<std::string>(ctx_p_, "ctx", "IIO Context", "The URI of the IIO Context");
   spec.param<std::string>(dev_p_, "dev", "IIO Device", "Name of the IIO Device", "");
   spec.param<std::string>(chan_p_, "chan", "IIO Channel", "Name of the IIO Channel", "");
-  spec.param<bool>(channel_is_output_,
-                   "channel_is_output",
-                   "IIO Channel is Output",
-                   "Is the channel output?",
-                   false);
+  spec.param<bool>(channel_is_output_, "channel_is_output", "IIO Channel is Output",
+                   "Is the channel output?", false);
   spec.param<std::string>(attr_name_p_, "attr_name", "IIO Attribute", "Name of the IIO Attribute");
 }
 
@@ -68,8 +66,8 @@ void IIOAttributeWrite::initialize() {
   if (dev_ && !chan_p_.get().empty()) {
     chan_ = api_->find_channel(dev_, chan_p_.get(), channel_is_output_.get());
     if (chan_ == nullptr) {
-      HOLOSCAN_LOG_ERROR(
-          "Failed to find IIO channel: {} (output: {})", chan_p_.get(), channel_is_output_.get());
+      HOLOSCAN_LOG_ERROR("Failed to find IIO channel: {} (output: {})", chan_p_.get(),
+                         channel_is_output_.get());
       chan_not_found_ = true;
       return;
     }
