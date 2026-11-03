@@ -121,7 +121,7 @@ class BasicIIOBufferEmitterOP : public Operator {
 
     // Create buffer info structure
     auto buffer_info = std::make_shared<iio_buffer_info_t>();
-    buffer_info->buffer = new int16_t[buffer_size];
+    buffer_info->data.resize(buffer_size * sizeof(int16_t));
     buffer_info->is_cyclic = true;
     buffer_info->device_name = device_name;
     buffer_info->samples_count = total_samples;
@@ -156,7 +156,7 @@ class BasicIIOBufferEmitterOP : public Operator {
     }
 
     // Fill buffer with interleaved samples for multi-channel setup
-    auto* buffer = static_cast<int16_t*>(buffer_info->buffer);
+    auto* buffer = reinterpret_cast<int16_t*>(buffer_info->data.data());
     for (size_t sample_idx = 0; sample_idx < total_samples; ++sample_idx) {
       size_t buffer_idx = sample_idx * enabled_channels;
 
@@ -186,7 +186,7 @@ class BasicIIOBufferPrinterOP : public Operator {
 
   void compute(InputContext& op_input, OutputContext&, ExecutionContext&) override {
     auto buffer_info = op_input.receive<std::shared_ptr<iio_buffer_info_t>>("buffer").value();
-    if (!buffer_info || !buffer_info->buffer) {
+    if (!buffer_info || buffer_info->data.empty()) {
       HOLOSCAN_LOG_ERROR("Buffer is null");
       return;
     }
@@ -211,7 +211,7 @@ class BasicIIOBufferPrinterOP : public Operator {
   void printSampleData(std::shared_ptr<iio_buffer_info_t> buffer_info,
                        uint enabled_channels) const {
     constexpr size_t samples_to_print = 100;
-    const auto* buffer = static_cast<int16_t*>(buffer_info->buffer);
+    const auto* buffer = reinterpret_cast<const int16_t*>(buffer_info->data.data());
     const size_t max_samples = std::min(samples_to_print, buffer_info->samples_count);
 
     HOLOSCAN_LOG_INFO("First {} samples per channel:", max_samples);

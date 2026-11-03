@@ -49,10 +49,10 @@ class IIOBufferRead : public Operator {
   Parameter<size_t> samples_count_p_;
 
   std::unique_ptr<IIOApi> api_ = make_iio_api();
-  iio_context* ctx_;
-  iio_device* dev_;
+  iio_context* ctx_ = nullptr;
+  iio_device* dev_ = nullptr;
   bool buffer_open_ = false;
-  size_t sample_size_;
+  size_t sample_size_ = 0;
 
   // Error flags for initialization failures
   bool ctx_empty_ = false;

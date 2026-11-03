@@ -20,7 +20,7 @@
 #include <gxf/core/gxf.h>
 
 #include <cerrno>
-#include <cstring>
+#include <cstdint>
 
 #include "iio_params.hpp"
 
@@ -176,7 +176,6 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
     return;
   }
   auto buffer_info = std::shared_ptr<iio_buffer_info_t>(new iio_buffer_info_t);
-  buffer_info->buffer = nullptr;
   buffer_info->samples_count = 0;
   buffer_info->is_cyclic = is_cyclic.get();
   buffer_info->device_name = dev_p_.get();
@@ -225,8 +224,8 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
   size_t bytes_read = static_cast<size_t>(res);
   buffer_info->samples_count = bytes_read / sample_size_;
 
-  buffer_info->buffer = new int8_t[bytes_read];
-  memcpy(buffer_info->buffer, buffer_data, bytes_read);
+  const auto* src = static_cast<const uint8_t*>(buffer_data);
+  buffer_info->data.assign(src, src + bytes_read);
 
   op_output.emit(buffer_info, "buffer");
 }

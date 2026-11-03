@@ -146,7 +146,7 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
   }
   auto buffer_info = op_input.receive<std::shared_ptr<iio_buffer_info_t>>("buffer").value();
 
-  if (buffer_info->buffer == nullptr) {
+  if (buffer_info->data.empty()) {
     HOLOSCAN_LOG_ERROR("Buffer is null");
     return;
   }
@@ -173,7 +173,7 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
   }
 
   // Copy the buffer data to the IIO buffer and push it
-  ssize_t res = api_->push(buffer_info->buffer,
+  ssize_t res = api_->push(buffer_info->data.data(),
                            buffer_info->samples_count * static_cast<size_t>(sample_size_));
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to push buffer. Error code: {}", res);

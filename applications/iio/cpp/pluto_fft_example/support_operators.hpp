@@ -112,12 +112,11 @@ class BinaryFileReaderOp : public Operator {
     buffer_info->device_name = device_name_.get();
 
     // Allocate buffer and read data
-    buffer_info->buffer = new uint8_t[expected_size];
-    file.read(reinterpret_cast<char*>(buffer_info->buffer), expected_size);
+    buffer_info->data.resize(expected_size);
+    file.read(reinterpret_cast<char*>(buffer_info->data.data()), expected_size);
 
     if (!file) {
       HOLOSCAN_LOG_ERROR("Failed to read {} bytes from offset {}", expected_size, current_offset_);
-      delete[] static_cast<uint8_t*>(buffer_info->buffer);
       file.close();
       return;
     }
@@ -193,7 +192,7 @@ class IIOChannelConvertOp : public Operator {
   void compute(InputContext& op_input, OutputContext& op_output, ExecutionContext&) override {
     auto buffer_info = op_input.receive<std::shared_ptr<iio_buffer_info_t>>("buffer_in").value();
 
-    if (!buffer_info || !buffer_info->buffer) {
+    if (!buffer_info || buffer_info->data.empty()) {
       HOLOSCAN_LOG_ERROR("IIOChannelConvertOp: Invalid buffer received");
       return;
     }
@@ -211,14 +210,15 @@ class IIOChannelConvertOp : public Operator {
     const size_t total_samples = samples_per_channel * num_channels;
 
     // Allocate output buffer
-    output_buffer_info->buffer = new int16_t[total_samples];
+    output_buffer_info->data.resize(total_samples * sizeof(int16_t));
 
     if (convert_channels_.get()) {
       // Apply IIO channel conversion
       convertChannelData(buffer_info, output_buffer_info, num_channels, samples_per_channel);
     } else {
       // Just copy data without conversion
-      std::memcpy(output_buffer_info->buffer, buffer_info->buffer, total_samples * sizeof(int16_t));
+      std::memcpy(output_buffer_info->data.data(), buffer_info->data.data(),
+                  total_samples * sizeof(int16_t));
     }
 
     // Emit the converted buffer
@@ -258,8 +258,8 @@ class IIOChannelConvertOp : public Operator {
       }
     }
 
-    const int16_t* input_data = static_cast<const int16_t*>(input_buffer->buffer);
-    int16_t* output_data = static_cast<int16_t*>(output_buffer->buffer);
+    const int16_t* input_data = reinterpret_cast<const int16_t*>(input_buffer->data.data());
+    int16_t* output_data = reinterpret_cast<int16_t*>(output_buffer->data.data());
 
     if (num_channels == 1) {
       // Single channel conversion
@@ -336,13 +336,13 @@ class IIOBuffer2CudaTensorOp : public Operator {
   void compute(InputContext& op_input, OutputContext& op_output, ExecutionContext&) override {
     auto buffer_info = op_input.receive<std::shared_ptr<iio_buffer_info_t>>("buffer").value();
 
-    if (!buffer_info || !buffer_info->buffer) {
+    if (!buffer_info || buffer_info->data.empty()) {
       HOLOSCAN_LOG_ERROR("IIOBuffer2CudaTensorOp: Invalid buffer received");
       return;
     }
 
     // Get buffer properties
-    const int16_t* samples = static_cast<const int16_t*>(buffer_info->buffer);
+    const int16_t* samples = reinterpret_cast<const int16_t*>(buffer_info->data.data());
     const size_t num_channels = buffer_info->enabled_channels.size();
     const size_t samples_per_channel = buffer_info->samples_count;
 

@@ -16,6 +16,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -30,16 +31,16 @@ enum class attr_type_t {
 
 struct iio_channel_info_t {
   std::string name;
-  bool is_output;
-  unsigned int index;                   // Channel index
+  bool is_output = false;
+  unsigned int index = 0;               // Channel index
   holoscan::ops::IIODataFormat format;  // Channel data format
 };
 
 struct iio_buffer_info_t {
-  size_t samples_count;
-  void* buffer;
+  size_t samples_count = 0;
+  std::vector<uint8_t> data;
   std::vector<iio_channel_info_t> enabled_channels;
-  bool is_cyclic;
+  bool is_cyclic = false;
   std::string device_name;
 };
 

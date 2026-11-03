@@ -172,7 +172,7 @@ add_flow(basic_emitter_op, iio_write_op, {{"value", "value"}});
 
 - To receive the data read from the `IIOBufferRead` operator, use the output
   port named `buffer` of type `iio_buffer_info_t` as a shared pointer. This
-  structure contains a the sample count and a void pointer to the data.
+  structure contains the sample count and the raw sample bytes in `data`.
   This is the data read from the buffer, in order to interpret it, please
   refer to the available example application or the libiio documentation (preferred).
 
@@ -217,7 +217,7 @@ add_flow(sdr_receiver, fft_processor, {{"buffer", "iq_data"}});
 
 - To send the data to be written to the `IIOBufferWrite` operator, use the
   input port named `buffer` of type `iio_buffer_info_t` as a shared pointer.
-  This structure contains a the sample count and a void pointer to the data.
+  This structure contains the sample count and the raw sample bytes in `data`.
   This is the data to be written to the buffer, in order to form it,
   please refer to the available example application or the libiio documentation.
 

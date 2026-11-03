@@ -232,13 +232,13 @@ PYBIND11_MODULE(_iio_controller, m) {
       .def_property(
           "buffer",
           [](const iio_buffer_info_t& self) -> py::bytes {
-            if (self.buffer == nullptr) return py::bytes();
-            return py::bytes(static_cast<char*>(self.buffer), self.samples_count * sizeof(int16_t));
+            if (self.data.empty()) return py::bytes();
+            return py::bytes(reinterpret_cast<const char*>(self.data.data()), self.data.size());
           },
-          [](iio_buffer_info_t& self, py::bytes data) {
-            std::string str_data = data;
-            self.buffer = malloc(str_data.size());
-            std::memcpy(self.buffer, str_data.data(), str_data.size());
+          [](iio_buffer_info_t& self, py::bytes py_bytes) {
+            std::string str_data = py_bytes;
+            const auto* src = reinterpret_cast<const uint8_t*>(str_data.data());
+            self.data.assign(src, src + str_data.size());
           });
 
   py::class_<IIOAttributeRead, PyIIOAttributeRead, holoscan::Operator,
