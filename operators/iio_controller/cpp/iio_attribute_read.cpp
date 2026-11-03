@@ -21,6 +21,13 @@
 
 using namespace holoscan::ops;
 
+void IIOAttributeRead::stop() {
+  if (ctx_) {
+    api_->destroy_context(ctx_);
+    ctx_ = nullptr;
+  }
+}
+
 void IIOAttributeRead::setup(OperatorSpec& spec) {
   HOLOSCAN_LOG_INFO("IIOAttributeRead setup");
   spec.output<std::string>("value");

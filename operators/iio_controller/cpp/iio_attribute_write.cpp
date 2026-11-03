@@ -21,6 +21,13 @@
 
 using namespace holoscan::ops;
 
+void IIOAttributeWrite::stop() {
+  if (ctx_) {
+    api_->destroy_context(ctx_);
+    ctx_ = nullptr;
+  }
+}
+
 void IIOAttributeWrite::setup(OperatorSpec& spec) {
   HOLOSCAN_LOG_DEBUG("IIOAttributeWrite setup");
   // TODO: Maybe output the return code of the write op

@@ -220,6 +220,9 @@ add_flow(sdr_receiver, fft_processor, {{"buffer", "iq_data"}});
   This structure contains the sample count and the raw sample bytes in `data`.
   This is the data to be written to the buffer, in order to form it,
   please refer to the available example application or the libiio documentation.
+- If the received structure has `is_cyclic` set, the device keeps transmitting that
+  buffer and any buffer received after it is ignored (libiio cannot change a cyclic
+  buffer once it is running).
 
 #### Operator Example - Transmitting Data with ADALM-Pluto
 

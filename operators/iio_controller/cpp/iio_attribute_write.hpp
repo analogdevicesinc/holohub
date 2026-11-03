@@ -36,6 +36,7 @@ class IIOAttributeWrite : public holoscan::Operator {
   IIOAttributeWrite() = default;
   ~IIOAttributeWrite() = default;
 
+  void stop() override;
   void setup(OperatorSpec& spec) override;
   void initialize() override;
   void compute(InputContext& op_input, OutputContext& op_output, ExecutionContext& ec) override;
@@ -48,9 +49,9 @@ class IIOAttributeWrite : public holoscan::Operator {
   Parameter<std::string> attr_name_p_;
 
   std::unique_ptr<IIOApi> api_ = make_iio_api();
-  iio_context* ctx_;
-  iio_device* dev_;
-  iio_channel* chan_;
+  iio_context* ctx_ = nullptr;
+  iio_device* dev_ = nullptr;
+  iio_channel* chan_ = nullptr;
   std::string attr_name_;
   attr_type_t attr_type_;
 

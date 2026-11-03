@@ -51,6 +51,9 @@ class IIOBufferWrite : public Operator {
   iio_context* ctx_ = nullptr;
   iio_device* dev_ = nullptr;
   bool buffer_open_ = false;
+  bool buffer_cyclic_ = false;
+  bool cyclic_running_ = false;
+  bool cyclic_ignore_warned_ = false;
   uint32_t buffer_samples_count_ = 0;
   ssize_t sample_size_ = 0;
 

@@ -33,6 +33,7 @@ void IIOBufferWrite::stop() {
   if (buffer_open_) {
     api_->close_buffer();
     buffer_open_ = false;
+    cyclic_running_ = false;
   }
   if (ctx_) {
     api_->destroy_context(ctx_);
@@ -156,6 +157,16 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
                      buffer_info->device_name, buffer_info->samples_count, buffer_info->is_cyclic,
                      buffer_info->enabled_channels.size());
 
+  // libiio cannot change a cyclic buffer once it is looping, so the first one
+  // keeps being transmitted and any later buffer is ignored.
+  if (cyclic_running_) {
+    if (!cyclic_ignore_warned_) {
+      HOLOSCAN_LOG_WARN("A cyclic buffer is already being transmitted; ignoring new buffers.");
+      cyclic_ignore_warned_ = true;
+    }
+    return;
+  }
+
   if (!buffer_open_ || buffer_samples_count_ != buffer_info->samples_count) {
     if (buffer_open_) {
       HOLOSCAN_LOG_INFO("Destroying buffer due to size mismatch.");
@@ -164,7 +175,8 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
     HOLOSCAN_LOG_INFO("Creating new buffer with {} samples of size {} bytes.",
                       buffer_info->samples_count, sample_size_);
     buffer_samples_count_ = static_cast<uint32_t>(buffer_info->samples_count);
-    buffer_open_ = api_->open_buffer(dev_, buffer_info->samples_count, buffer_info->is_cyclic);
+    buffer_cyclic_ = buffer_info->is_cyclic;
+    buffer_open_ = api_->open_buffer(dev_, buffer_info->samples_count, buffer_cyclic_);
     if (!buffer_open_) {
       HOLOSCAN_LOG_ERROR("Failed to create buffer, error code {}", errno);
       GxfGraphInterrupt(context.context());
@@ -177,6 +189,9 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
                            buffer_info->samples_count * static_cast<size_t>(sample_size_));
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to push buffer. Error code: {}", res);
+    api_->close_buffer();
+    buffer_open_ = false;
     return;
   }
+  cyclic_running_ = buffer_cyclic_;
 }
