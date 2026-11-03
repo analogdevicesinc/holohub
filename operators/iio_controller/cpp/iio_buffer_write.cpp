@@ -151,6 +151,14 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
     return;
   }
 
+  const size_t push_bytes = buffer_info->samples_count * static_cast<size_t>(sample_size_);
+  if (buffer_info->data.size() < push_bytes) {
+    HOLOSCAN_LOG_ERROR("Buffer holds {} bytes, but {} samples of {} bytes need {}",
+                       buffer_info->data.size(), buffer_info->samples_count, sample_size_,
+                       push_bytes);
+    return;
+  }
+
   // Log the received buffer information for debugging
   HOLOSCAN_LOG_DEBUG("Received buffer from device: {}, samples: {}, cyclic: {}, channels: {}",
                      buffer_info->device_name, buffer_info->samples_count, buffer_info->is_cyclic,
@@ -173,8 +181,7 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
   }
 
   // Copy the buffer data to the IIO buffer and push it
-  ssize_t res = api_->push(buffer_info->data.data(),
-                           buffer_info->samples_count * static_cast<size_t>(sample_size_));
+  ssize_t res = api_->push(buffer_info->data.data(), push_bytes);
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to push buffer. Error code: {}", res);
     api_->close_buffer();
