@@ -177,6 +177,8 @@ void IIOBufferWrite::compute(InputContext& op_input, OutputContext&, ExecutionCo
                            buffer_info->samples_count * static_cast<size_t>(sample_size_));
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to push buffer. Error code: {}", res);
+    api_->close_buffer();
+    buffer_open_ = false;
     return;
   }
 }

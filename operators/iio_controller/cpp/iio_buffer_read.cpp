@@ -218,6 +218,8 @@ void IIOBufferRead::compute(InputContext&, OutputContext& op_output, ExecutionCo
   ssize_t res = api_->refill(&buffer_data);
   if (res < 0) {
     HOLOSCAN_LOG_ERROR("Failed to refill buffer. Error code: {}", res);
+    api_->close_buffer();
+    buffer_open_ = false;
     return;
   }
 

@@ -226,12 +226,14 @@ void IIOConfigurator::compute(InputContext&, OutputContext&, ExecutionContext& c
         HOLOSCAN_LOG_ERROR("No setup configuration found in YAML");
         HOLOSCAN_LOG_ERROR(
             "Cannot proceed: Missing setup configuration - stopping graph execution");
+        api_->destroy_context(ctx);
         GxfGraphInterrupt(context.context());
         return;
       }
 
       auto& setup = cfg["setup"];
       parse_setup(setup, ctx);
+      api_->destroy_context(ctx);
     }
   }
 
