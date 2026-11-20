@@ -108,6 +108,12 @@ install(
   COMPONENT iio_controller-cpp)
 
 install(
-  FILES iio_controller.hpp iio_params.hpp iio_api.hpp
+  FILES iio_api.hpp
+        iio_params.hpp
+        iio_attribute_read.hpp
+        iio_attribute_write.hpp
+        iio_buffer_read.hpp
+        iio_buffer_write.hpp
+        iio_configurator.hpp
   DESTINATION include/holoscan/operators/iio_controller
   COMPONENT iio_controller-cpp)
