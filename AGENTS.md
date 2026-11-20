@@ -26,7 +26,7 @@ operator's public shape. See DEVELOPER.md for why.
 | Build the example (C++) | `holoscan build iio --local --language cpp` |
 | Build the example (Python) | `holoscan build iio --local --language python` |
 | Run the example | `holoscan run iio --local` |
-| Run the tests | `cd build/iio && ctest --output-on-failure` |
+| Run the tests | Python build first, then `cd build/iio && ctest --output-on-failure` |
 | Lint | `holoscan lint` (`--install-dependencies` first time) |
 | List projects / check host | `holoscan list --json`, `holoscan env-check --json` |
 

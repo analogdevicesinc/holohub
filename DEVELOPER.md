@@ -59,13 +59,6 @@ holoscan build iio --local                      # C++
 holoscan build iio --local --language python    # Python bindings
 ```
 
-Without the CLI:
-
-```bash
-cmake -S . -B build/iio -DBUILD_ALL=ON
-cmake --build build/iio -j"$(nproc)"
-```
-
 **libiio version selection:** both v0 and v1 are supported; the correct backend is chosen at
 `pkg-config` detection time. If you have multiple versions installed side-by-side (as opposed to
 one normal system install), select one explicitly:
@@ -110,6 +103,7 @@ Note: `pylibiio`'s loader (`iio/__init__.py`) hard-requires libiio **v1** — it
 ## Testing
 
 ```bash
+holoscan build iio --local --language python   # the tests are Python
 cd build/iio
 ctest --output-on-failure
 ```
