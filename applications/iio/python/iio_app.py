@@ -320,7 +320,7 @@ class MyApp(Application):
 
         # Channel configuration matching C++ implementation
         enabled_channels_names_1 = ["voltage0", "voltage1"] if G_NUM_CHANNELS == 2 else ["voltage0"]
-        enabled_channels_input = [False, False] if G_NUM_CHANNELS == 2 else [False]
+        enabled_channels_output = [False, False] if G_NUM_CHANNELS == 2 else [False]
 
         # Create IIO buffer read operator
         iio_buf_read_op = IIOBufferRead(
@@ -331,7 +331,7 @@ class MyApp(Application):
             is_cyclic=True,
             samples_count=8192,
             enabled_channel_names=enabled_channels_names_1,
-            enabled_channel_input=enabled_channels_input,
+            enabled_channel_output=enabled_channels_output,
             name="iio_buffer_read",
         )
 

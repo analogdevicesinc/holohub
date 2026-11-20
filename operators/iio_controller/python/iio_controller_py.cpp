@@ -278,7 +278,7 @@ PYBIND11_MODULE(_iio_controller, m) {
       .def(py::init<Fragment*, const py::args&, std::string, std::string, bool, size_t,
                     std::vector<std::string>, std::vector<bool>, const std::string&>(),
            "fragment"_a, "ctx"_a, "dev"_a, "is_cyclic"_a, "samples_count"_a,
-           "enabled_channel_names"_a, "enabled_channel_input"_a, "name"_a = "iio_buffer_read"s,
+           "enabled_channel_names"_a, "enabled_channel_output"_a, "name"_a = "iio_buffer_read"s,
            holoscan::doc::IIOBufferRead::doc_IIOBufferRead_python)
       .def("initialize", &IIOBufferRead::initialize, holoscan::doc::IIOBufferRead::doc_initialize);
 

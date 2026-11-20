@@ -60,7 +60,7 @@ def test_construct_buffer_read():
         is_cyclic=False,
         samples_count=8192,
         enabled_channel_names=["voltage0", "voltage1"],
-        enabled_channel_input=[False, False],
+        enabled_channel_output=[False, False],
     )
     assert op is not None
 
