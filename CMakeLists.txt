@@ -64,9 +64,8 @@ if(HOLOSCAN_IIO_CONTROLLER_BUILD_PYTHON)
         COMPONENTS Interpreter Development.Module Development.SABIModule)
 endif()
 
-# Application languages. The Holoscan CLI sets these from --language or the
-# application's metadata.json; a plain CMake build includes every language.
-option(HOLOSCAN_IIO_CONTROLLER_BUILD_CPP "Build C++ applications" ON)
+# Application languages are selected by the Holoscan CLI (--language), which
+# passes HOLOHUB_BUILD_CPP/PYTHON; the subdirectories check those.
 
 # ---------------------------------------------------------------------------
 # CMake helpers

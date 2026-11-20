@@ -66,6 +66,7 @@ spectrum plot), both in C++ and Python.
 ## Testing
 
 ```bash
+holoscan build iio --local --language python   # the tests are Python
 cd build/iio
 ctest --output-on-failure
 ```
