@@ -164,8 +164,9 @@ add_flow(basic_emitter_op, iio_write_op, {{"value", "value"}});
 - **`enabled_channel_names`**: (Mandatory) Channel list:
   - `["voltage0", "voltage1"]`
   - `["voltage0"]`
-- **`enabled_channel_input`**: (Mandatory) Channel direction list:
-  - `[true, true]` - Input channels for RX
+- **`enabled_channel_output`**: (Mandatory) Channel direction list, `true` for an output
+  channel:
+  - `[false, false]` - Input channels for RX
   - Must match the order of `enabled_channel_names`
 
 #### Ports (IIOBufferRead)
@@ -181,7 +182,7 @@ add_flow(basic_emitter_op, iio_write_op, {{"value", "value"}});
 ```cpp
 // Configure channels for IQ data reception
 std::vector<std::string> rx_channels = {"voltage0", "voltage1"};
-std::vector<bool> rx_input_flags = {true, true};  // Both are input channels
+std::vector<bool> rx_output_flags = {false, false};  // Both are input channels
 
 // Create SDR receiver operator
 auto sdr_receiver = make_operator<ops::IIOBufferRead>(
@@ -191,7 +192,7 @@ auto sdr_receiver = make_operator<ops::IIOBufferRead>(
     Arg("is_cyclic") = true,                        // Continuous streaming
     Arg("samples_count") = static_cast<size_t>(8192), // 8K samples per buffer
     Arg("enabled_channel_names") = rx_channels,
-    Arg("enabled_channel_input") = rx_input_flags
+    Arg("enabled_channel_output") = rx_output_flags
 );
 
 // Connect to signal processing pipeline
