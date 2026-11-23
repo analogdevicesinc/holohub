@@ -51,7 +51,8 @@ The application uses the IIO (Industrial I/O) Linux subsystem to communicate wit
 ### Software
 
 - Holoscan SDK
-- libiio library (version 0.x)
+- libiio library, v0.26+ or v1.x (the Python example needs v1 and its Python bindings)
+- gnuplot, only for the plots of the Pluto FFT example
 - Network connection to Pluto (default IP: 192.168.2.1), connecting through usb requires minimal code modifications
 
 ## Quick Start
@@ -63,8 +64,8 @@ Connect your ADALM-Pluto to your computer via USB. The device will appear as a n
 ### 2. Build the Application
 
 ```bash
-# From HoloHub root directory
-./holohub run iio
+# From the module root directory
+holoscan build iio --local --language cpp
 ```
 
 ### 3. Run Examples
@@ -75,7 +76,7 @@ The application includes several example modes:
 
 ```bash
 # Transmits a sine wave on the configured frequency
-./holohub run iio --language python
+holoscan run iio --local --language python
 ```
 
 #### Read Device Attributes
@@ -92,8 +93,8 @@ The C++ FFT example (`cpp/pluto_fft_example`) demonstrates real-time FFT visuali
 
 ```bash
 # Build and run the FFT example
-./holohub build iio --language cpp
-./holohub run iio --language cpp
+holoscan build iio --local --language cpp
+holoscan run iio --local --language cpp
 ```
 
 This example captures IQ samples from the Pluto SDR and displays a real-time FFT spectrum:

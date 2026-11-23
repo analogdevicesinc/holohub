@@ -55,16 +55,18 @@ operator's public shape.
 ## Building
 
 ```bash
-holoscan build iio --local                      # C++
+holoscan build iio --local --language cpp       # C++
 holoscan build iio --local --language python    # Python bindings
 ```
+
+Always pass `--language`: without it the CLI builds and runs the Python application.
 
 **libiio version selection:** both v0 and v1 are supported; the correct backend is chosen at
 `pkg-config` detection time. If you have multiple versions installed side-by-side (as opposed to
 one normal system install), select one explicitly:
 
 ```bash
-PKG_CONFIG_PATH=/path/to/libiio-vX/lib/pkgconfig holoscan build iio --local
+PKG_CONFIG_PATH=/path/to/libiio-vX/lib/pkgconfig holoscan build iio --local --language cpp
 ```
 
 CMake caches the pkg-config result — wipe `build/` before switching versions, or the old one
@@ -72,7 +74,7 @@ silently sticks:
 
 ```bash
 rm -rf build
-PKG_CONFIG_PATH=/path/to/the-other-version/lib/pkgconfig holoscan build iio --local
+PKG_CONFIG_PATH=/path/to/the-other-version/lib/pkgconfig holoscan build iio --local --language cpp
 ```
 
 ---
@@ -80,8 +82,8 @@ PKG_CONFIG_PATH=/path/to/the-other-version/lib/pkgconfig holoscan build iio --lo
 ## Running
 
 ```bash
-holoscan run iio --local                        # pluto_fft_example by default
-holoscan run iio --local -- --basic-example -r   # basic_example, specific flag
+holoscan run iio --local --language cpp                                    # pluto_fft_example
+holoscan run iio --local --language cpp --run-args="--basic-example -r"    # basic_example, specific flag
 holoscan run iio --local --language python
 ```
 

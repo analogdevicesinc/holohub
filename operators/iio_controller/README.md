@@ -32,7 +32,7 @@ The Industrial I/O (IIO) subsystem is a Linux kernel framework that provides:
 CMake auto-detects which libiio version is installed via pkg-config.
 If both are installed and you need a specific one, point pkg-config
 at it before building, e.g.:
-`PKG_CONFIG_PATH=/path/to/libiio-v0/pkgconfig ./holohub build iio`
+`PKG_CONFIG_PATH=/path/to/libiio-v0/lib/pkgconfig holoscan build iio --local --language cpp`
 
 ## Operator Types
 
@@ -221,9 +221,11 @@ add_flow(sdr_receiver, fft_processor, {{"buffer", "iq_data"}});
   This structure contains the sample count and the raw sample bytes in `data`.
   This is the data to be written to the buffer, in order to form it,
   please refer to the available example application or the libiio documentation.
-- If the received structure has `is_cyclic` set, the device keeps transmitting that
-  buffer and any buffer received after it is ignored (libiio cannot change a cyclic
-  buffer once it is running).
+- The mode comes from the `is_cyclic` field of the received structure and is fixed when
+  the device buffer is opened: on the first buffer, and again whenever a non-cyclic
+  buffer's `samples_count` changes. Once a cyclic buffer is running, the device keeps
+  transmitting it and any buffer received after it is ignored (libiio cannot change a
+  cyclic buffer once it is running).
 
 #### Operator Example - Transmitting Data with ADALM-Pluto
 

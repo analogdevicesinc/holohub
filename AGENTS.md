@@ -25,7 +25,9 @@ operator's public shape. See DEVELOPER.md for why.
 | --- | --- |
 | Build the example (C++) | `holoscan build iio --local --language cpp` |
 | Build the example (Python) | `holoscan build iio --local --language python` |
-| Run the example | `holoscan run iio --local` |
+| Run the example (C++) | `holoscan run iio --local --language cpp` |
+| Run the example (Python) | `holoscan run iio --local --language python` |
+| Pass arguments to the C++ example | add `--run-args="--basic-example -r"` |
 | Run the tests | Python build first, then `cd build/iio && ctest --output-on-failure` |
 | Lint | `holoscan lint` (`--install-dependencies` first time) |
 | List projects / check host | `holoscan list --json`, `holoscan env-check --json` |
@@ -54,8 +56,8 @@ A change is done when `holoscan lint` and the build/test commands above pass.
 - SDK version and base image: `Dockerfile`, `pyproject.toml`
   (`[tool.holoscan.base-images]`), and the module's `metadata.json`
   (`holoscan_sdk.minimum_required_version`).
-- Operator ports or parameters: the operator's own code, the operator table in
-  `operators/iio_controller/README.md`, and the Python test suite
+- Operator ports or parameters: the operator's own code, its parameter and port
+  lists in `operators/iio_controller/README.md`, and the Python test suite
   (`operators/iio_controller/python/tests/`).
 - Third-party dependencies: `NOTICE`, which lists each one with its version and
   license, including attribution for derived files (see `simple_fft.{hpp,cu}`).

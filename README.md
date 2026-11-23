@@ -16,15 +16,24 @@ If libiio is installed normally (system package manager, or a plain source insta
 custom prefix), it's already on `pkg-config`'s default search path — nothing extra is needed:
 
 ```bash
-holoscan build iio --local
-holoscan run iio --local
+holoscan build iio --local --language cpp
+holoscan run iio --local --language cpp
 ```
+
+Always pass `--language`: the application exists in both C++ and Python, and without the flag
+the CLI builds and runs the Python one.
 
 If you have multiple libiio versions installed side-by-side and need to select a specific one,
 point `pkg-config` at it explicitly:
 
 ```bash
-PKG_CONFIG_PATH=/path/to/libiio-v0-or-v1/lib/pkgconfig holoscan build iio --local
+PKG_CONFIG_PATH=/path/to/libiio-v0-or-v1/lib/pkgconfig holoscan build iio --local --language cpp
+```
+
+To pass arguments to the C++ application (for example, to pick a `basic_example` demo):
+
+```bash
+holoscan run iio --local --language cpp --run-args="--basic-example -r"
 ```
 
 For Python:
